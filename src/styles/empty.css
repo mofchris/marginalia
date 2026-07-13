@@ -1,0 +1,3 @@
+/* Intentionally empty — substituted for katex's stylesheet in vite.config.ts.
+   The LaTeX feature is disabled in Crepe, but its theme CSS imports katex
+   statically, which would otherwise drag ~1 MB of KaTeX fonts into the bundle. */
