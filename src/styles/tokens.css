@@ -1,0 +1,101 @@
+/* ============================================================
+   Marginalia design tokens — the single place to tune the system.
+   Warm neutral palette. No pure black, no pure white, anywhere.
+   Exactly one vibrant accent (confident red), used sparingly.
+   ============================================================ */
+
+:root {
+  /* ---- Accent (the only vibrant colour) ---- */
+  --accent: #de4a3c;
+  --accent-strong: #c93d30;
+  --accent-soft: rgba(222, 74, 60, 0.12);
+  --on-accent: #f6f2ec;
+
+  /* ---- Typography ---- */
+  --font-ui: "Segoe UI Variable", "Segoe UI", -apple-system, "SF Pro Text",
+    system-ui, sans-serif;
+  --font-reading: "Charter", "Georgia", "Cambria", "Segoe UI", serif;
+  --font-mono: "Cascadia Code", "SF Mono", "JetBrains Mono", "Consolas",
+    ui-monospace, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-md: 0.9375rem;
+  --text-reading: 1.0625rem;
+
+  /* ---- Spacing / shape ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+
+  --editor-max-width: 46rem;
+}
+
+/* ---- Light: warm paper ---- */
+:root[data-theme="light"] {
+  --bg: #f4f1ec;              /* window background — warm paper */
+  --bg-raised: #efebe4;       /* toolbars, panels */
+  --bg-inset: #e9e4dc;        /* code blocks, inputs */
+  --fg: #2b2926;              /* primary text — soft charcoal */
+  --fg-muted: #6f6a62;        /* secondary text */
+  --fg-faint: #a39d92;        /* placeholders, disabled */
+  --border: #ddd6cb;
+  --border-strong: #c8c0b2;
+  --hover: rgba(43, 41, 38, 0.06);
+  --selected: rgba(43, 41, 38, 0.1);
+  --shadow: 0 4px 18px rgba(43, 41, 38, 0.12);
+  --selection: rgba(222, 74, 60, 0.18);
+}
+
+/* ---- Dark: warm charcoal ---- */
+:root[data-theme="dark"] {
+  --bg: #232120;
+  --bg-raised: #2a2725;
+  --bg-inset: #1d1b1a;
+  --fg: #e8e3da;
+  --fg-muted: #a29b90;
+  --fg-faint: #6d675e;
+  --border: #3a3633;
+  --border-strong: #4c4742;
+  --hover: rgba(232, 227, 218, 0.07);
+  --selected: rgba(232, 227, 218, 0.12);
+  --shadow: 0 4px 18px rgba(12, 11, 10, 0.5);
+  --selection: rgba(222, 74, 60, 0.28);
+
+  --accent: #e2584a;
+  --accent-strong: #ea6c5f;
+  --accent-soft: rgba(226, 88, 74, 0.16);
+}
+
+/* ---- Map our tokens onto Crepe's theme variables ---- */
+:root[data-theme] {
+  --crepe-color-background: var(--bg);
+  --crepe-color-on-background: var(--fg);
+  --crepe-color-surface: var(--bg-raised);
+  --crepe-color-surface-low: var(--bg-inset);
+  --crepe-color-on-surface: var(--fg);
+  --crepe-color-on-surface-variant: var(--fg-muted);
+  --crepe-color-outline: var(--border-strong);
+  --crepe-color-primary: var(--accent);
+  --crepe-color-secondary: var(--accent-soft);
+  --crepe-color-on-secondary: var(--fg);
+  --crepe-color-inverse: var(--fg);
+  --crepe-color-on-inverse: var(--bg);
+  --crepe-color-inline-code: var(--accent-strong);
+  --crepe-color-error: var(--accent-strong);
+  --crepe-color-hover: var(--hover);
+  --crepe-color-selected: var(--selected);
+  --crepe-color-inline-area: var(--bg-inset);
+
+  --crepe-font-title: var(--font-reading);
+  --crepe-font-default: var(--font-reading);
+  --crepe-font-code: var(--font-mono);
+
+  --crepe-shadow-1: var(--shadow);
+  --crepe-shadow-2: var(--shadow);
+}

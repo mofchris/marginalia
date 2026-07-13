@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x86-64
+            os: windows-latest
+            rust-targets: x86_64-pc-windows-msvc
+            tauri-args: ""
+          - name: Windows ARM64
+            os: windows-latest
+            rust-targets: aarch64-pc-windows-msvc
+            # MSI (WiX) cannot cross-build for ARM64 on an x64 runner; NSIS can.
+            tauri-args: "--target aarch64-pc-windows-msvc --bundles nsis"
+          - name: macOS universal
+            os: macos-latest
+            rust-targets: aarch64-apple-darwin,x86_64-apple-darwin
+            tauri-args: "--target universal-apple-darwin"
+
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: npm ci
+
+      # Code signing (optional — builds are unsigned until these secrets exist):
+      #   Windows: set WINDOWS_CERTIFICATE / WINDOWS_CERTIFICATE_PASSWORD and add
+      #            "certificateThumbprint" etc. under bundle.windows in tauri.conf.json,
+      #            or use an external signing tool via bundle.windows.signCommand.
+      #   macOS:   APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
+      #            APPLE_ID, APPLE_PASSWORD (app-specific), APPLE_TEAM_ID — tauri-action
+      #            picks these up automatically for signing + notarization.
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "Marginalia ${{ github.ref_name }}"
+          releaseDraft: true
+          args: ${{ matrix.tauri-args }}

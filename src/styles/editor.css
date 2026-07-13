@@ -1,0 +1,48 @@
+/* ---------- WYSIWYG editing surface (Crepe/Milkdown overrides) ---------- */
+
+#editor-root .milkdown {
+  background: var(--bg);
+  color: var(--fg);
+  min-height: 100%;
+}
+
+#editor-root .milkdown .ProseMirror {
+  max-width: var(--editor-max-width);
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6) 40vh;
+  font-family: var(--font-reading);
+  font-size: var(--text-reading);
+  line-height: 1.65;
+  caret-color: var(--accent);
+}
+
+#editor-root .milkdown .ProseMirror a {
+  color: var(--accent);
+}
+
+/* Markdown syntax markers revealed at the cursor position */
+.syntax-marker {
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  user-select: none;
+  opacity: 0.9;
+}
+
+/* ---------- Plain text / source editor ---------- */
+.text-editor {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: none;
+  resize: none;
+  outline: none;
+  background: var(--bg);
+  color: var(--fg);
+  caret-color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  padding: var(--space-8) max(var(--space-6), calc((100% - var(--editor-max-width)) / 2));
+  tab-size: 4;
+}
