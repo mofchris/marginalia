@@ -55,15 +55,34 @@ jobs:
       #   macOS:   APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
       #            APPLE_ID, APPLE_PASSWORD (app-specific), APPLE_TEAM_ID — tauri-action
       #            picks these up automatically for signing + notarization.
-      - uses: tauri-apps/tauri-action@v0
+      #
+      # Only export Apple signing vars that are actually set: an empty
+      # APPLE_CERTIFICATE still counts as "set" to the Tauri bundler, which then
+      # fails trying to import an empty keychain certificate.
+      - name: Export Apple signing env (only when secrets are configured)
+        if: startsWith(matrix.os, 'macos')
+        shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for v in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+            if [ -n "${!v}" ]; then
+              {
+                echo "$v<<__EOF__"
+                echo "${!v}"
+                echo "__EOF__"
+              } >> "$GITHUB_ENV"
+            fi
+          done
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "Marginalia ${{ github.ref_name }}"
