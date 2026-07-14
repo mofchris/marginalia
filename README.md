@@ -79,20 +79,6 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-Publish the draft release once you've sanity-checked the artifacts.
-
-### Code signing — what you must provide
-
-Builds work unsigned (users will see OS warnings). To sign:
-
-**Windows** — buy an Authenticode code-signing certificate (OV or EV) from a CA (DigiCert, Sectigo, SSL.com…).
-- Local signing: install the cert, then set `bundle.windows.certificateThumbprint`, `digestAlgorithm: "sha256"`, and `timestampUrl` in `tauri.conf.json`.
-- CI signing: modern certs are HSM/cloud-based; use your CA's signing service via `bundle.windows.signCommand` (e.g. `AzureSignTool sign …`) and add the service credentials as GitHub secrets.
-
-**macOS** — join the [Apple Developer Program](https://developer.apple.com/programs/) ($99/yr):
-1. Create a **Developer ID Application** certificate, export it as `.p12`.
-2. Add GitHub secrets: `APPLE_CERTIFICATE` (base64 of the .p12), `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY` (e.g. `Developer ID Application: Your Name (TEAMID)`), plus for notarization `APPLE_ID`, `APPLE_PASSWORD` (an app-specific password), `APPLE_TEAM_ID`.
-3. The workflow already forwards these to `tauri-action`, which signs and notarizes automatically. No config changes needed.
 
 ## Design system
 
