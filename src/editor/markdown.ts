@@ -1,6 +1,7 @@
 import { Crepe } from "@milkdown/crepe";
 import { $prose } from "@milkdown/kit/utils";
 import { syntaxRevealPlugin } from "./syntax-reveal";
+import { codeTheme } from "./code-theme";
 import type { EditorSurface } from "../types";
 
 import "@milkdown/crepe/theme/common/style.css";
@@ -21,6 +22,11 @@ export async function createMarkdownEditor(
     defaultValue: initial,
     features: {
       [Crepe.Feature.Latex]: false,
+    },
+    featureConfigs: {
+      [Crepe.Feature.CodeMirror]: {
+        theme: codeTheme,
+      },
     },
   });
 

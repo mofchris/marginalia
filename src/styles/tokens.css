@@ -72,8 +72,12 @@
   --accent-soft: rgba(226, 88, 74, 0.16);
 }
 
-/* ---- Map our tokens onto Crepe's theme variables ---- */
-:root[data-theme] {
+/* ---- Map our tokens onto Crepe's theme variables ----
+   Crepe's frame.css re-declares every --crepe-* variable directly on
+   .milkdown, which out-scopes anything inherited from :root — so the
+   mapping must also target .milkdown with higher specificity. */
+:root[data-theme],
+:root[data-theme] .milkdown {
   --crepe-color-background: var(--bg);
   --crepe-color-on-background: var(--fg);
   --crepe-color-surface: var(--bg-raised);
