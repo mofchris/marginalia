@@ -1,6 +1,6 @@
 [package]
 name = "marginalia"
-version = "0.1.2"
+version = "0.1.3"
 description = "A lightweight WYSIWYG Markdown-first text editor"
 edition = "2021"
 
