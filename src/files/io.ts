@@ -22,7 +22,16 @@ export const writeTextFile = (path: string, contents: string) =>
 export const readBinaryFile = (path: string) =>
   invoke<ArrayBuffer>("read_binary_file", { path });
 
+export const renameFile = (from: string, to: string) =>
+  invoke<void>("rename_file", { from, to });
+
 export const cliOpenPath = () => invoke<string | null>("cli_open_path");
+
+/** Directory portion of a path, including its trailing separator. */
+export function dirOf(path: string): string {
+  const i = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
+  return i < 0 ? "" : path.slice(0, i + 1);
+}
 
 export async function pickFileToOpen(): Promise<string | null> {
   const result = await openDialog({

@@ -27,8 +27,9 @@
             <svg viewBox="0 0 16 16" width="15" height="15"><path d="M2.5 3A1.5 1.5 0 0 1 4 1.5h7L14.5 5v8A1.5 1.5 0 0 1 13 14.5H4A1.5 1.5 0 0 1 2.5 13V3Z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 1.5V5h5V1.5M5 14.5V10h6v4.5" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
           </button>
         </div>
-        <div id="file-title" class="file-title">
+        <div id="file-title" class="file-title" title="Click to rename">
           <span id="file-name">Untitled</span><span id="dirty-dot" class="dirty-dot" hidden>&#9679;</span>
+          <input id="file-name-input" class="file-title-input" spellcheck="false" autocomplete="off" hidden />
         </div>
         <div class="topbar-group">
           <button id="btn-source" class="tb-btn" title="Toggle source view (Ctrl+/)">
@@ -63,6 +64,13 @@
         <span id="status-type"></span>
         <span class="status-spacer"></span>
         <span id="status-words"></span>
+        <span class="status-sep"></span>
+        <button id="btn-width" class="sb-btn" title="Column width">Narrow</button>
+        <span class="zoom-group">
+          <button id="btn-zoom-out" class="sb-btn sb-icon" title="Zoom out (Ctrl+-)">&#8722;</button>
+          <button id="btn-zoom-reset" class="sb-btn sb-zoom" title="Reset zoom (Ctrl+0)">100%</button>
+          <button id="btn-zoom-in" class="sb-btn sb-icon" title="Zoom in (Ctrl+=)">+</button>
+        </span>
       </footer>
     </div>
     <div id="modal-backdrop" class="modal-backdrop" hidden>

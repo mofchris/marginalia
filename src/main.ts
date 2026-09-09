@@ -11,6 +11,7 @@ import {
   newFile,
   openPath,
   openViaDialog,
+  renameCurrentFile,
   save,
   saveAs,
   toggleSource,
@@ -18,8 +19,12 @@ import {
 import { cliOpenPath, baseName } from "./files/io";
 import { getRecentFiles } from "./files/recent";
 import { initTheme, toggleTheme } from "./ui/theme";
+import { initFileTitle } from "./ui/filetitle";
+import { cycleWidth, initView, resetZoom, stepZoom, zoomByWheel } from "./ui/view";
 
 initTheme();
+initView();
+initFileTitle(renameCurrentFile, hasDocument);
 
 // ---------- Toolbar ----------
 document.getElementById("btn-new")!.addEventListener("click", () => void newFile());
@@ -27,6 +32,23 @@ document.getElementById("btn-open")!.addEventListener("click", () => void openVi
 document.getElementById("btn-save")!.addEventListener("click", () => void save());
 document.getElementById("btn-source")!.addEventListener("click", () => void toggleSource());
 document.getElementById("btn-theme")!.addEventListener("click", toggleTheme);
+
+// ---------- View controls ----------
+document.getElementById("btn-width")!.addEventListener("click", cycleWidth);
+document.getElementById("btn-zoom-in")!.addEventListener("click", () => stepZoom(1));
+document.getElementById("btn-zoom-out")!.addEventListener("click", () => stepZoom(-1));
+document.getElementById("btn-zoom-reset")!.addEventListener("click", resetZoom);
+
+// Ctrl/Cmd + wheel, which is also what a trackpad pinch reports.
+window.addEventListener(
+  "wheel",
+  (e) => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    zoomByWheel(e.deltaY, e.deltaMode);
+  },
+  { passive: false },
+);
 
 // ---------- Recent files menu ----------
 const recentBtn = document.getElementById("btn-recent")!;
@@ -94,6 +116,15 @@ window.addEventListener("keydown", (e) => {
   } else if (key === "/") {
     e.preventDefault();
     void toggleSource();
+  } else if (key === "=" || key === "+") {
+    e.preventDefault();
+    stepZoom(1);
+  } else if (key === "-" || key === "_") {
+    e.preventDefault();
+    stepZoom(-1);
+  } else if (key === "0") {
+    e.preventDefault();
+    resetZoom();
   }
 });
 

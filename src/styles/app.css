@@ -97,6 +97,31 @@ button:focus-visible {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: text;
+}
+
+.file-title:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.file-title.editing {
+  background: transparent;
+  cursor: default;
+}
+
+.file-title-input {
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 1px var(--space-2);
+  outline: none;
+  max-width: 100%;
 }
 
 .dirty-dot {
@@ -301,6 +326,48 @@ button:focus-visible {
 
 .status-spacer {
   flex: 1;
+}
+
+.status-sep {
+  width: 1px;
+  height: 12px;
+  background: var(--border);
+}
+
+.sb-btn {
+  border: none;
+  background: transparent;
+  color: var(--fg-muted);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.sb-btn:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.zoom-group {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.sb-icon {
+  width: 18px;
+  padding: 1px 0;
+  text-align: center;
+}
+
+/* Tabular figures stop the row shifting as the percentage changes width. */
+.sb-zoom {
+  min-width: 46px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---------- Modal ---------- */

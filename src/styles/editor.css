@@ -1,3 +1,25 @@
+/* ---------- Zoom & column width ----------
+   Zoom rides on the scroll container so it scales the whole surface as one
+   unit -- Crepe hard-codes its heading sizes in px, so scaling the font-size
+   tokens alone would grow body text while headings stayed put. Percentage
+   lengths resolve correctly across the zoom boundary, so height: 100% still
+   fills the host exactly. */
+#editor-root {
+  zoom: var(--zoom, 1);
+}
+
+#editor-root[data-width="narrow"] {
+  --editor-max-width: 46rem;
+}
+
+#editor-root[data-width="wide"] {
+  --editor-max-width: 68rem;
+}
+
+#editor-root[data-width="full"] {
+  --editor-max-width: 100%;
+}
+
 /* ---------- WYSIWYG editing surface (Crepe/Milkdown overrides) ---------- */
 
 #editor-root .milkdown {
@@ -7,7 +29,7 @@
 }
 
 #editor-root .milkdown .ProseMirror {
-  max-width: var(--editor-max-width);
+  max-width: min(var(--editor-max-width), 100%);
   margin: 0 auto;
   padding: var(--space-8) var(--space-6) 40vh;
   font-family: var(--font-reading);

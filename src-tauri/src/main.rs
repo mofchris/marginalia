@@ -21,6 +21,34 @@ fn read_binary_file(path: String) -> Result<tauri::ipc::Response, String> {
     Ok(tauri::ipc::Response::new(bytes))
 }
 
+/// Rename a file in place. Refuses to overwrite an existing file, but allows a
+/// rename that only changes case (`notes.md` -> `Notes.md`), which would
+/// otherwise look like a collision on the case-insensitive filesystems that
+/// Windows and macOS use by default.
+#[tauri::command]
+fn rename_file(from: String, to: String) -> Result<(), String> {
+    let to_path = PathBuf::from(&to);
+    let name = to_path
+        .file_name()
+        .ok_or_else(|| "Invalid file name".to_string())?;
+    if name.is_empty() {
+        return Err("Invalid file name".into());
+    }
+    if to_path.exists() {
+        let same_file = std::fs::canonicalize(&from)
+            .ok()
+            .zip(std::fs::canonicalize(&to_path).ok())
+            .is_some_and(|(a, b)| a == b);
+        if !same_file {
+            return Err(format!(
+                "\u{201c}{}\u{201d} already exists in this folder.",
+                name.to_string_lossy()
+            ));
+        }
+    }
+    std::fs::rename(&from, &to_path).map_err(|e| e.to_string())
+}
+
 /// First existing file path passed on the command line ("Open with" / file association).
 #[tauri::command]
 fn cli_open_path() -> Option<String> {
@@ -38,6 +66,7 @@ fn main() {
             read_text_file,
             write_text_file,
             read_binary_file,
+            rename_file,
             cli_open_path
         ])
         .run(tauri::generate_context!())

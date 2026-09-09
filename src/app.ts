@@ -4,10 +4,12 @@ import { createPlainEditor } from "./editor/plaintext";
 import {
   MARKDOWN_EXTS,
   baseName,
+  dirOf,
   extOf,
   pickFileToOpen,
   pickSavePath,
   readTextFile,
+  renameFile,
   writeTextFile,
 } from "./files/io";
 import { addRecentFile, removeRecentFile } from "./files/recent";
@@ -222,6 +224,52 @@ export async function saveAs(): Promise<boolean> {
     showNotice(`Save failed: ${String(err)}`);
     return false;
   }
+}
+
+/** Markdown or plain text, decided by extension. */
+function kindForName(name: string): OpenFile["kind"] {
+  return MARKDOWN_EXTS.includes(extOf(name)) ? "markdown" : "plain";
+}
+
+/**
+ * Rename the open document from the title bar. Untitled and freshly imported
+ * documents have nothing on disk yet, so they only take the new name locally
+ * and carry it into the next Save As.
+ */
+export async function renameCurrentFile(nextName: string): Promise<boolean> {
+  if (!file) return false;
+  const name = nextName.trim();
+  if (!name || name === file.name) return false;
+  if (/[\\/]/.test(name)) {
+    showNotice("A file name cannot contain \\ or /.");
+    return false;
+  }
+
+  const prevKind = file.kind;
+
+  if (file.path) {
+    const target = dirOf(file.path) + name;
+    try {
+      await renameFile(file.path, target);
+    } catch (err) {
+      showNotice(`Rename failed: ${String(err)}`);
+      return false;
+    }
+    removeRecentFile(file.path);
+    addRecentFile(target);
+    file.path = target;
+  }
+
+  file.name = name;
+  file.kind = kindForName(name);
+  refreshTitle();
+  refreshStatus();
+
+  // A changed extension changes which editor is the right one for the file.
+  if (file.kind !== prevKind && editor) {
+    await mountEditor(file.kind === "markdown" ? "wysiwyg" : "plain", editor.getText());
+  }
+  return true;
 }
 
 async function switchToWysiwyg(): Promise<void> {
