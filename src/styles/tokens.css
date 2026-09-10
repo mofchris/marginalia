@@ -14,6 +14,13 @@
   --accent-text: #b83527;
   --accent-soft: rgba(222, 74, 60, 0.12);
   --on-accent: #f6f2ec;
+  /* Filled buttons need a red dark enough to carry near-white text: the plain
+     --accent only reaches 3.66:1. Light deepens on hover, dark brightens, so
+     either way the button comes forward rather than just shifting shade. */
+  --accent-fill: #b83527;
+  --accent-fill-hover: #a02c1f;
+  --on-accent-fill: #f6f2ec;
+  --accent-soft-hover: rgba(184, 53, 39, 0.20);
 
   /* ---- Typography ---- */
   --font-ui: "Segoe UI Variable", "Segoe UI", -apple-system, "SF Pro Text",
@@ -76,6 +83,10 @@
   --accent: #e2584a;
   --accent-strong: #ea6c5f;
   --accent-text: #ea6c5f;
+  --accent-fill: #e2584a;
+  --accent-fill-hover: #ea6c5f;
+  --on-accent-fill: #1d1b1a;
+  --accent-soft-hover: rgba(226, 88, 74, 0.28);
   --accent-soft: rgba(226, 88, 74, 0.16);
 }
 

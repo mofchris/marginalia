@@ -284,8 +284,8 @@ button:focus-visible {
 }
 
 .primary-btn {
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--accent-fill);
+  color: var(--on-accent-fill);
   border: none;
   border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-4);
@@ -295,7 +295,7 @@ button:focus-visible {
 }
 
 .primary-btn:hover {
-  background: var(--accent-strong);
+  background: var(--accent-fill-hover);
 }
 
 .ghost-btn {
@@ -442,4 +442,58 @@ button:focus-visible {
   display: flex;
   gap: var(--space-2);
   justify-content: flex-end;
+}
+
+/* ---- Hover behaviour for the discard dialog ----
+   The three choices should not react identically. Save is the filled one and
+   deepens; Don't save stays outlined on hover so it never reads as a second
+   primary, and only raises its tint and border; Cancel is deliberately the
+   quietest, a neutral wash. Each lands on a colour the idle state never uses,
+   so the change is legible rather than a faint grey shimmer. */
+.modal-actions .primary-btn,
+.modal-actions .danger-btn,
+.modal-actions .ghost-btn {
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
+.modal-actions .danger-btn:hover {
+  background: var(--accent-soft-hover);
+  border-color: var(--accent-fill-hover);
+  color: var(--accent-fill-hover);
+}
+
+.modal-actions .ghost-btn:hover {
+  background: var(--hover);
+  border-color: var(--fg-muted);
+}
+
+/* Pressing should read as immediate, so the settle animation is skipped and
+   each button goes one step further than its hover. */
+.modal-actions .primary-btn:active,
+.modal-actions .danger-btn:active,
+.modal-actions .ghost-btn:active {
+  transition: none;
+}
+
+.modal-actions .primary-btn:active {
+  background: var(--accent-text);
+}
+
+.modal-actions .danger-btn:active {
+  background: var(--accent-soft);
+}
+
+.modal-actions .ghost-btn:active {
+  background: var(--selected);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-actions .primary-btn,
+  .modal-actions .danger-btn,
+  .modal-actions .ghost-btn {
+    transition: none;
+  }
 }
