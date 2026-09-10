@@ -6,6 +6,16 @@
 
 :root {
   /* ---- Accent (the only vibrant colour) ---- */
+  /* The discard button's hover is a vivid, deliberately alarming red, the same
+     in both themes so "this one destroys work" always looks identical. It
+     carries dark ink rather than white: at this brightness white only reaches
+     3.18:1, while the ink reaches 4.84:1. The deeper edge keeps the button's
+     shape crisp against the light dialog surface, where the fill alone is 3:1. */
+  --danger-fill-hover: #ff3b30;
+  --danger-fill-active: #ff5a4f;
+  --danger-edge: #cf1f0d;
+  --on-danger-fill: #1d1b1a;
+
   --accent: #de4a3c;
   --accent-strong: #c93d30;
   /* The accent is too light to carry text: #de4a3c is only 3.62:1 on the page
@@ -20,7 +30,8 @@
   --accent-fill: #b83527;
   --accent-fill-hover: #a02c1f;
   --on-accent-fill: #f6f2ec;
-  --accent-soft-hover: rgba(184, 53, 39, 0.20);
+  --accent-fill-active: #8f2719;
+  --neutral-fill-hover: #ddd6cb;
 
   /* ---- Typography ---- */
   --font-ui: "Segoe UI Variable", "Segoe UI", -apple-system, "SF Pro Text",
@@ -86,7 +97,8 @@
   --accent-fill: #e2584a;
   --accent-fill-hover: #ea6c5f;
   --on-accent-fill: #1d1b1a;
-  --accent-soft-hover: rgba(226, 88, 74, 0.28);
+  --accent-fill-active: #f08c81;
+  --neutral-fill-hover: #3a3633;
   --accent-soft: rgba(226, 88, 74, 0.16);
 }
 

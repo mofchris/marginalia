@@ -433,6 +433,10 @@ button:focus-visible {
   width: calc(100% - 4rem);
 }
 
+.modal:focus {
+  outline: none;
+}
+
 .modal p {
   margin: 0 0 var(--space-6);
   line-height: 1.5;
@@ -460,13 +464,13 @@ button:focus-visible {
 }
 
 .modal-actions .danger-btn:hover {
-  background: var(--accent-soft-hover);
-  border-color: var(--accent-fill-hover);
-  color: var(--accent-fill-hover);
+  background: var(--danger-fill-hover);
+  border-color: var(--danger-edge);
+  color: var(--on-danger-fill);
 }
 
 .modal-actions .ghost-btn:hover {
-  background: var(--hover);
+  background: var(--neutral-fill-hover);
   border-color: var(--fg-muted);
 }
 
@@ -479,15 +483,17 @@ button:focus-visible {
 }
 
 .modal-actions .primary-btn:active {
-  background: var(--accent-text);
+  background: var(--accent-fill-active);
 }
 
 .modal-actions .danger-btn:active {
-  background: var(--accent-soft);
+  background: var(--danger-fill-active);
+  border-color: var(--danger-edge);
+  color: var(--on-danger-fill);
 }
 
 .modal-actions .ghost-btn:active {
-  background: var(--selected);
+  background: var(--border-strong);
 }
 
 @media (prefers-reduced-motion: reduce) {

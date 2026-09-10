@@ -11,6 +11,7 @@ interface ModalChoice {
 const backdrop = document.getElementById("modal-backdrop")!;
 const messageEl = document.getElementById("modal-message")!;
 const actionsEl = document.getElementById("modal-actions")!;
+const dialogEl = backdrop.querySelector<HTMLElement>(".modal");
 
 /** Show a blocking in-app dialog; resolves with the chosen value. */
 export function showModal(message: string, choices: ModalChoice[]): Promise<string> {
@@ -38,6 +39,12 @@ export function showModal(message: string, choices: ModalChoice[]): Promise<stri
       if (e.key === "Escape") {
         e.preventDefault();
         close(escapeValue);
+        return;
+      }
+      if (e.key === "Enter" && document.activeElement === dialogEl) {
+        // The dialog holds focus, so give Enter the default action.
+        e.preventDefault();
+        actionsEl.querySelector<HTMLButtonElement>(".primary-btn")?.click();
         return;
       }
       if (e.key === "Tab") {
@@ -77,7 +84,10 @@ export function showModal(message: string, choices: ModalChoice[]): Promise<stri
     // Listen in the capture phase so the dialog sees keys before the window
     // level shortcut handler does.
     document.addEventListener("keydown", onKeydown, true);
-    actionsEl.querySelector<HTMLElement>(".primary-btn, .ghost-btn, .danger-btn")?.focus();
+    // Focus the dialog rather than a button: focusing a button paints a focus
+    // ring on it the moment the dialog opens, which reads as a stray border on
+    // the primary action. Enter still triggers it, and Tab reaches the buttons.
+    dialogEl?.focus();
   });
 }
 
