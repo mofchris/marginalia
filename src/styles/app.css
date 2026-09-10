@@ -464,9 +464,9 @@ button:focus-visible {
 }
 
 .modal-actions .danger-btn:hover {
-  background: var(--danger-fill-hover);
-  border-color: var(--danger-edge);
-  color: var(--on-danger-fill);
+  background: var(--accent-fill-hover);
+  border-color: var(--accent-fill-hover);
+  color: var(--on-accent-fill);
 }
 
 .modal-actions .ghost-btn:hover {
@@ -487,9 +487,9 @@ button:focus-visible {
 }
 
 .modal-actions .danger-btn:active {
-  background: var(--danger-fill-active);
-  border-color: var(--danger-edge);
-  color: var(--on-danger-fill);
+  background: var(--accent-fill-active);
+  border-color: var(--accent-fill-active);
+  color: var(--on-accent-fill);
 }
 
 .modal-actions .ghost-btn:active {
