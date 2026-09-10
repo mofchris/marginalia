@@ -96,20 +96,27 @@ button:focus-visible {
   color: var(--fg-muted);
   overflow: hidden;
   white-space: nowrap;
-  text-overflow: ellipsis;
-  padding: 2px var(--space-2);
+}
+
+.file-title-btn {
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: inherit;
+  background: transparent;
+  border: none;
   border-radius: var(--radius-sm);
+  padding: 3px var(--space-2);
+  min-height: 24px;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   cursor: text;
 }
 
-.file-title:hover {
+.file-title-btn:hover {
   background: var(--hover);
   color: var(--fg);
-}
-
-.file-title.editing {
-  background: transparent;
-  cursor: default;
 }
 
 .file-title-input {
@@ -196,11 +203,15 @@ button:focus-visible {
 }
 
 .notice-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   border: 1px solid var(--border-strong);
   background: var(--bg-raised);
   color: var(--fg);
+  font-family: var(--font-ui);
   font-size: var(--text-xs);
-  padding: 2px var(--space-2);
+  padding: 2px var(--space-3);
   border-radius: var(--radius-sm);
   cursor: pointer;
 }
@@ -315,7 +326,7 @@ button:focus-visible {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  padding: var(--space-1) var(--space-4);
+  padding: 0 var(--space-4);
   font-size: var(--text-xs);
   color: var(--fg-muted);
   background: var(--bg-raised);
@@ -328,6 +339,15 @@ button:focus-visible {
   flex: 1;
 }
 
+/* Keep the bar one line tall: without this the readouts wrap in a narrow
+   window and the whole status bar changes height. */
+#status-type,
+#status-words {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .status-sep {
   width: 1px;
   height: 12px;
@@ -335,13 +355,17 @@ button:focus-visible {
 }
 
 .sb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
   border: none;
   background: transparent;
   color: var(--fg-muted);
   font-family: var(--font-ui);
   font-size: var(--text-xs);
   line-height: 1.4;
-  padding: 1px var(--space-2);
+  padding: 2px var(--space-2);
   border-radius: var(--radius-sm);
   cursor: pointer;
 }
@@ -354,18 +378,17 @@ button:focus-visible {
 .zoom-group {
   display: flex;
   align-items: center;
-  gap: 1px;
+  gap: 2px;
 }
 
 .sb-icon {
-  width: 18px;
-  padding: 1px 0;
-  text-align: center;
+  width: 24px;
+  padding: 2px 0;
 }
 
 /* Tabular figures stop the row shifting as the percentage changes width. */
 .sb-zoom {
-  min-width: 46px;
+  min-width: 52px;
   text-align: center;
   font-variant-numeric: tabular-nums;
 }

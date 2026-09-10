@@ -4,6 +4,8 @@ const actionBtn = document.getElementById("notice-action") as HTMLButtonElement;
 const closeBtn = document.getElementById("notice-close") as HTMLButtonElement;
 
 let onAction: (() => void) | null = null;
+/** Guards the deferred write below against a notice replaced or dismissed first. */
+let seq = 0;
 
 closeBtn.addEventListener("click", () => hideNotice());
 actionBtn.addEventListener("click", () => {
@@ -13,7 +15,7 @@ actionBtn.addEventListener("click", () => {
 });
 
 export function showNotice(message: string, action?: { label: string; run: () => void }): void {
-  textEl.textContent = message;
+  const mine = ++seq;
   if (action) {
     actionBtn.textContent = action.label;
     actionBtn.hidden = false;
@@ -22,10 +24,21 @@ export function showNotice(message: string, action?: { label: string; run: () =>
     actionBtn.hidden = true;
     onAction = null;
   }
+
+  // The bar is a live region, so reveal it before writing the message: a region
+  // that is still display:none when its text changes may never be announced.
+  // Clearing first also guarantees a mutation when the same message repeats,
+  // which would otherwise be silent.
+  textEl.textContent = "";
   bar.hidden = false;
+  requestAnimationFrame(() => {
+    if (seq === mine) textEl.textContent = message;
+  });
 }
 
 export function hideNotice(): void {
+  seq++;
   bar.hidden = true;
+  textEl.textContent = "";
   onAction = null;
 }

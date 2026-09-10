@@ -27,9 +27,9 @@
             <svg viewBox="0 0 16 16" width="15" height="15"><path d="M2.5 3A1.5 1.5 0 0 1 4 1.5h7L14.5 5v8A1.5 1.5 0 0 1 13 14.5H4A1.5 1.5 0 0 1 2.5 13V3Z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 1.5V5h5V1.5M5 14.5V10h6v4.5" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
           </button>
         </div>
-        <div id="file-title" class="file-title" title="Click to rename">
-          <span id="file-name">Untitled</span><span id="dirty-dot" class="dirty-dot" hidden>&#9679;</span>
-          <input id="file-name-input" class="file-title-input" spellcheck="false" autocomplete="off" hidden />
+        <div id="file-title" class="file-title">
+          <button id="file-name-btn" class="file-title-btn" title="Rename (Enter)" aria-label="Rename file"><span id="file-name">Untitled</span></button><span id="dirty-dot" class="dirty-dot" hidden>&#9679;</span>
+          <input id="file-name-input" class="file-title-input" aria-label="File name" spellcheck="false" autocomplete="off" hidden />
         </div>
         <div class="topbar-group">
           <button id="btn-source" class="tb-btn" title="Toggle source view (Ctrl+/)">
@@ -40,7 +40,7 @@
           </button>
         </div>
       </header>
-      <div id="notice-bar" class="notice-bar" hidden>
+      <div id="notice-bar" class="notice-bar" role="status" aria-live="polite" hidden>
         <span id="notice-text"></span>
         <button id="notice-action" class="notice-btn" hidden></button>
         <button id="notice-close" class="notice-btn">Dismiss</button>
