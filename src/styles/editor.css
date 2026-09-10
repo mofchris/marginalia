@@ -39,12 +39,12 @@
 }
 
 #editor-root .milkdown .ProseMirror a {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* Markdown syntax markers revealed at the cursor position */
 .syntax-marker {
-  color: var(--fg-faint);
+  color: var(--fg-muted);
   font-family: var(--font-mono);
   font-size: 0.85em;
   user-select: none;

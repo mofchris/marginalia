@@ -177,7 +177,7 @@ button:focus-visible {
 
 .menu-item .menu-path {
   display: block;
-  color: var(--fg-faint);
+  color: var(--fg-muted);
   font-size: var(--text-xs);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -185,7 +185,7 @@ button:focus-visible {
 
 .menu-empty {
   padding: var(--space-2) var(--space-3);
-  color: var(--fg-faint);
+  color: var(--fg-muted);
   font-size: var(--text-sm);
 }
 
@@ -311,6 +311,25 @@ button:focus-visible {
 
 .ghost-btn:hover {
   background: var(--hover);
+}
+
+/* The choice that loses data must be tellable from Cancel without relying on
+   colour alone, so it carries a heavier border and weight too. The padding
+   compensates for the thicker border to keep every button the same height. */
+.danger-btn {
+  background: transparent;
+  color: var(--accent-text);
+  border: 2px solid var(--accent-text);
+  border-radius: var(--radius-sm);
+  padding: calc(var(--space-2) - 1px) var(--space-4);
+  font-size: var(--text-sm);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.danger-btn:hover {
+  background: var(--accent-soft);
 }
 
 #welcome-recent {

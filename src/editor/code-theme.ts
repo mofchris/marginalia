@@ -26,7 +26,7 @@ const chrome = EditorView.theme({
   ".cm-activeLine": { backgroundColor: "transparent" },
   ".cm-gutters": {
     backgroundColor: "var(--bg-inset)",
-    color: "var(--fg-faint)",
+    color: "var(--fg-muted)",
     borderRight: "1px solid var(--border)",
   },
   ".cm-activeLineGutter": {
@@ -39,16 +39,16 @@ const chrome = EditorView.theme({
    reserved for keywords, exactly like the rest of the app reserves it for
    primary actions. */
 const highlight = HighlightStyle.define([
-  { tag: [tags.keyword, tags.moduleKeyword, tags.operatorKeyword], color: "var(--accent)" },
+  { tag: [tags.keyword, tags.moduleKeyword, tags.operatorKeyword], color: "var(--accent-text)" },
   { tag: [tags.string, tags.special(tags.string), tags.regexp], color: "var(--fg-muted)" },
-  { tag: [tags.comment, tags.blockComment, tags.lineComment], color: "var(--fg-faint)", fontStyle: "italic" },
-  { tag: [tags.number, tags.bool, tags.null, tags.atom], color: "var(--accent-strong)" },
+  { tag: [tags.comment, tags.blockComment, tags.lineComment], color: "var(--fg-muted)", fontStyle: "italic" },
+  { tag: [tags.number, tags.bool, tags.null, tags.atom], color: "var(--accent-text)" },
   { tag: [tags.function(tags.variableName), tags.function(tags.propertyName)], color: "var(--fg)", fontWeight: "600" },
   { tag: [tags.typeName, tags.className, tags.namespace], color: "var(--fg)", fontWeight: "600" },
   { tag: [tags.definition(tags.variableName), tags.propertyName, tags.attributeName], color: "var(--fg)" },
   { tag: [tags.operator, tags.punctuation, tags.bracket], color: "var(--fg-muted)" },
-  { tag: [tags.meta, tags.processingInstruction], color: "var(--fg-faint)" },
-  { tag: tags.invalid, color: "var(--accent-strong)", textDecoration: "underline wavy" },
+  { tag: [tags.meta, tags.processingInstruction], color: "var(--fg-muted)" },
+  { tag: tags.invalid, color: "var(--accent-text)", textDecoration: "underline wavy" },
 ]);
 
 export const codeTheme: Extension = [chrome, syntaxHighlighting(highlight)];

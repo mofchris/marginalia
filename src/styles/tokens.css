@@ -8,6 +8,10 @@
   /* ---- Accent (the only vibrant colour) ---- */
   --accent: #de4a3c;
   --accent-strong: #c93d30;
+  /* The accent is too light to carry text: #de4a3c is only 3.62:1 on the page
+     background. --accent-text is the variant that clears 4.5:1 on both the
+     page and the inset code background, for links, inline code and syntax. */
+  --accent-text: #b83527;
   --accent-soft: rgba(222, 74, 60, 0.12);
   --on-accent: #f6f2ec;
 
@@ -38,11 +42,13 @@
 
 /* ---- Light: warm paper ---- */
 :root[data-theme="light"] {
+  --accent-text: #b83527;
   --bg: #f4f1ec;              /* window background — warm paper */
   --bg-raised: #efebe4;       /* toolbars, panels */
   --bg-inset: #e9e4dc;        /* code blocks, inputs */
   --fg: #2b2926;              /* primary text — soft charcoal */
-  --fg-muted: #6f6a62;        /* secondary text */
+  --fg-muted: #666159;        /* secondary text — dark enough to stay legible
+                                 on --bg-inset, the code block background */
   --fg-faint: #a39d92;        /* placeholders, disabled */
   --border: #ddd6cb;
   --border-strong: #c8c0b2;
@@ -69,6 +75,7 @@
 
   --accent: #e2584a;
   --accent-strong: #ea6c5f;
+  --accent-text: #ea6c5f;
   --accent-soft: rgba(226, 88, 74, 0.16);
 }
 
@@ -90,7 +97,7 @@
   --crepe-color-on-secondary: var(--fg);
   --crepe-color-inverse: var(--fg);
   --crepe-color-on-inverse: var(--bg);
-  --crepe-color-inline-code: var(--accent-strong);
+  --crepe-color-inline-code: var(--accent-text);
   --crepe-color-error: var(--accent-strong);
   --crepe-color-hover: var(--hover);
   --crepe-color-selected: var(--selected);

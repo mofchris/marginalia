@@ -74,6 +74,10 @@ function apply(): void {
   editorRoot.dataset.width = width;
   zoomLabel.textContent = `${zoom}%`;
   widthBtn.textContent = WIDTH_LABELS[width];
+  // "125%" and "Wide" alone don't say what the control does, so spell it out
+  // for anyone who reaches these by keyboard or screen reader.
+  zoomLabel.setAttribute("aria-label", `Zoom ${zoom}%, reset to 100%`);
+  widthBtn.setAttribute("aria-label", `Column width: ${WIDTH_LABELS[width]}`);
 }
 
 function persist(): void {

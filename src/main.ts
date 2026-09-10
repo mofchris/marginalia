@@ -75,7 +75,7 @@ function renderRecentInto(container: HTMLElement): void {
     sub.textContent = path;
     item.append(name, sub);
     item.addEventListener("click", () => {
-      recentMenu.hidden = true;
+      setRecentMenuOpen(false);
       void openPath(path);
     });
     container.appendChild(item);
@@ -85,11 +85,16 @@ function renderRecentInto(container: HTMLElement): void {
 recentBtn.addEventListener("click", (e) => {
   e.stopPropagation();
   if (recentMenu.hidden) renderRecentInto(recentMenu);
-  recentMenu.hidden = !recentMenu.hidden;
+  setRecentMenuOpen(recentMenu.hidden); // currently hidden means: open it
 });
 document.addEventListener("click", () => {
-  recentMenu.hidden = true;
+  setRecentMenuOpen(false);
 });
+
+function setRecentMenuOpen(open: boolean): void {
+  recentMenu.hidden = !open;
+  recentBtn.setAttribute("aria-expanded", String(open));
+}
 
 // ---------- Welcome screen ----------
 document.getElementById("welcome-open")!.addEventListener("click", () => void openViaDialog());

@@ -69,6 +69,7 @@ function refreshStatus(): void {
       : "Plain text";
   setStatusType(label + origin);
   sourceBtn.classList.toggle("active", mode === "source");
+  sourceBtn.setAttribute("aria-pressed", String(mode === "source"));
   (sourceBtn as HTMLButtonElement).disabled = file.kind !== "markdown";
 }
 
