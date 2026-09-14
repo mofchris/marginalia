@@ -18,4 +18,18 @@ export interface EditorSurface {
   setText(text: string): void;
   focus(): void;
   destroy(): void;
+  capturePosition?(): EditorPosition;
+  restorePosition?(position: EditorPosition): void;
+  getSearchText?(): string;
+  selectRange?(from: number, to: number): void;
+  replaceRanges?(ranges: { from: number; to: number }[], replacement: string): void;
+  getHeadings?(): { text: string; level: number; from: number }[];
+}
+
+export interface EditorPosition {
+  from: number;
+  to: number;
+  before: string;
+  after: string;
+  scrollTop: number;
 }

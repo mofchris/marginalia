@@ -1,6 +1,8 @@
 import "./styles/tokens.css";
 import "./styles/app.css";
 import "./styles/editor.css";
+import "./styles/motion.css";
+import { initMotion, setOverlayVisible } from './ui/motion';
 
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
@@ -15,7 +17,13 @@ import {
   save,
   saveAs,
   toggleSource,
+  checkpointSession,
+  restoreSession,
+  checkExternalChanges,
+  currentEditor,
 } from "./app";
+import { native } from './platform';
+import { initWritingTools } from './ui/writing-tools';
 import { cliOpenPath, baseName } from "./files/io";
 import { getRecentFiles } from "./files/recent";
 import { initTheme, toggleTheme } from "./ui/theme";
@@ -23,8 +31,11 @@ import { initFileTitle } from "./ui/filetitle";
 import { cycleWidth, initView, resetZoom, stepZoom, zoomByWheel } from "./ui/view";
 
 initTheme();
+initMotion();
 initView();
 initFileTitle(renameCurrentFile, hasDocument);
+initWritingTools(currentEditor);
+if (import.meta.env.VITE_PERF_PROBE === '1') void import('./diagnostics').then(({ initDiagnostics }) => initDiagnostics());
 
 // ---------- Toolbar ----------
 document.getElementById("btn-new")!.addEventListener("click", () => void newFile());
@@ -85,16 +96,27 @@ function renderRecentInto(container: HTMLElement): void {
 recentBtn.addEventListener("click", (e) => {
   e.stopPropagation();
   if (recentMenu.hidden) renderRecentInto(recentMenu);
-  setRecentMenuOpen(recentMenu.hidden); // currently hidden means: open it
+  setRecentMenuOpen(recentMenu.hidden);
 });
 document.addEventListener("click", () => {
   setRecentMenuOpen(false);
 });
 
 function setRecentMenuOpen(open: boolean): void {
-  recentMenu.hidden = !open;
-  recentBtn.setAttribute("aria-expanded", String(open));
+  setOverlayVisible(recentMenu, open);
+  recentBtn.setAttribute('aria-expanded', String(open));
+  if (open) recentMenu.querySelector<HTMLElement>('button')?.focus();
 }
+
+recentMenu.addEventListener('keydown', event => {
+  const items = [...recentMenu.querySelectorAll<HTMLButtonElement>('button')];
+  const index = items.indexOf(document.activeElement as HTMLButtonElement);
+  if (event.key === 'Escape') { setRecentMenuOpen(false); recentBtn.focus(); }
+  else if (event.key === 'ArrowDown') items[(index + 1) % items.length]?.focus();
+  else if (event.key === 'ArrowUp') items[(index - 1 + items.length) % items.length]?.focus();
+  else return;
+  event.preventDefault(); event.stopPropagation();
+});
 
 // ---------- Welcome screen ----------
 document.getElementById("welcome-open")!.addEventListener("click", () => void openViaDialog());
@@ -106,7 +128,7 @@ window.addEventListener("keydown", (e) => {
   const mod = e.ctrlKey || e.metaKey;
   if (!mod) return;
   const key = e.key.toLowerCase();
-  if (key === "o") {
+  if (key === "o" && !e.shiftKey) {
     e.preventDefault();
     void openViaDialog();
   } else if (key === "s" && e.shiftKey) {
@@ -134,7 +156,7 @@ window.addEventListener("keydown", (e) => {
 });
 
 // ---------- Drag & drop to open ----------
-void getCurrentWebview().onDragDropEvent((event) => {
+if (native) void getCurrentWebview().onDragDropEvent((event) => {
   if (event.payload.type === "drop" && event.payload.paths.length > 0) {
     void openPath(event.payload.paths[0]);
   }
@@ -142,7 +164,7 @@ void getCurrentWebview().onDragDropEvent((event) => {
 
 // ---------- Unsaved-changes protection on window close ----------
 let closing = false;
-void getCurrentWindow().onCloseRequested(async (event) => {
+if (native) void getCurrentWindow().onCloseRequested(async (event) => {
   if (closing || !isDirty()) return;
   event.preventDefault();
   if (await guardDirty()) {
@@ -154,7 +176,8 @@ void getCurrentWindow().onCloseRequested(async (event) => {
 // ---------- Startup: file association / "Open with" ----------
 void (async () => {
   try {
-    const path = await cliOpenPath();
+    await restoreSession();
+    const path = native ? await cliOpenPath() : null;
     if (path) {
       await openPath(path);
       return;
@@ -166,3 +189,7 @@ void (async () => {
     document.getElementById("welcome")!.hidden = false;
   }
 })();
+
+window.addEventListener('beforeunload', checkpointSession);
+document.addEventListener('visibilitychange', () => { if (document.hidden) checkpointSession(); });
+window.addEventListener('focus', () => { if (native) void checkExternalChanges(); });

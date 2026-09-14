@@ -1,6 +1,6 @@
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { setWindowTitle } from './platform';
+import { animateSurface } from './ui/motion';
 import type { EditorMode, EditorSurface, OpenFile } from "./types";
-import { createPlainEditor } from "./editor/plaintext";
 import {
   MARKDOWN_EXTS,
   baseName,
@@ -16,6 +16,7 @@ import { addRecentFile, removeRecentFile } from "./files/recent";
 import { setStatusType, updateWordCount } from "./ui/statusbar";
 import { confirmDiscard } from "./ui/modal";
 import { hideNotice, showNotice } from "./ui/notice";
+import { readSession, writeSession, recoveryDecision, discardSession } from './files/recovery';
 
 /** Markdown documents larger than this open in source view first (perf guard). */
 const LARGE_MD_THRESHOLD = 500_000;
@@ -33,26 +34,53 @@ let dirty = false;
 let mountSeq = 0;
 let mounting = false; // ignore editor change events fired during initial mount
 let statsTimer: ReturnType<typeof setTimeout> | undefined;
+let saving: Promise<boolean> | null = null;
+let recoveryTimer: ReturnType<typeof setTimeout> | undefined;
+let recoveryAvailable = true;
+let discarding = false;
+const surfaces = new Map<EditorMode, { editor: EditorSurface; host: HTMLElement }>();
 
 export const isDirty = () => dirty;
 export const currentFileName = () => file?.name ?? "Untitled";
 export const hasDocument = () => file !== null;
+export const currentEditor = () => editor;
 
 function markDirty(): void {
   if (mounting) return;
-  if (!dirty) {
-    dirty = true;
+  const changed = !!file && !!editor && editor.getText() !== file.savedText;
+  if (dirty !== changed) {
+    dirty = changed;
     refreshTitle();
   }
   clearTimeout(statsTimer);
   statsTimer = setTimeout(() => updateWordCount(editor?.getText() ?? ""), 350);
+  clearTimeout(recoveryTimer);
+  recoveryTimer = setTimeout(checkpointSession, 500);
+  document.dispatchEvent(new Event('document-change'));
+}
+
+export function checkpointSession(): void {
+  clearTimeout(recoveryTimer);
+  if (!file || !editor || mounting || discarding) return;
+  recoveryAvailable = writeSession({ version: 1, file: { ...file }, text: editor.getText(),
+    mode, dirty, position: editor.capturePosition?.() });
+  refreshSaveStatus();
+}
+
+function refreshSaveStatus(): void {
+  const status = document.getElementById('save-status');
+  if (!status) return;
+  status.textContent = !file ? '' : !recoveryAvailable ? 'Recovery unavailable — save your work'
+    : saving ? 'Saving…' : dirty ? 'Unsaved changes' : file.path ? 'Saved' : 'Draft';
+  status.title = dirty && recoveryAvailable ? 'A recovery draft is kept on this device. Save to update your file.' : '';
 }
 
 function refreshTitle(): void {
   const name = currentFileName();
   fileNameEl.textContent = name;
   dirtyDotEl.hidden = !dirty;
-  void getCurrentWindow().setTitle(`${dirty ? "• " : ""}${name} — Marginalia`);
+  setWindowTitle(`${dirty ? "• " : ""}${name} — Marginalia`);
+  refreshSaveStatus();
 }
 
 function refreshStatus(): void {
@@ -69,37 +97,68 @@ function refreshStatus(): void {
       : "Plain text";
   setStatusType(label + origin);
   sourceBtn.classList.toggle("active", mode === "source");
-  sourceBtn.setAttribute("aria-pressed", String(mode === "source"));
+  sourceBtn.setAttribute('aria-pressed', String(mode === 'source'));
   (sourceBtn as HTMLButtonElement).disabled = file.kind !== "markdown";
 }
 
-async function mountEditor(nextMode: EditorMode, text: string): Promise<void> {
+async function mountEditor(nextMode: EditorMode, text: string, preserve = false): Promise<void> {
+  const started = performance.now();
   const seq = ++mountSeq;
   mounting = true;
-  editor?.destroy();
-  editor = null;
-  editorRoot.innerHTML = "";
-  welcomeEl.hidden = true;
-  mode = nextMode;
-
-  if (nextMode === "wysiwyg") {
-    const { createMarkdownEditor } = await import("./editor/markdown");
-    if (seq !== mountSeq) return; // a newer mount superseded this one
-    editor = await createMarkdownEditor(editorRoot, text, markDirty);
-    if (seq !== mountSeq) {
-      editor.destroy();
-      return;
+  const position = preserve ? editor?.capturePosition?.() : undefined;
+  const scrollTop = editorRoot.scrollTop;
+  let activated = false;
+  editorRoot.setAttribute('aria-busy', 'true');
+  editorRoot.inert = true;
+  try {
+    let next = preserve ? surfaces.get(nextMode) : undefined;
+    if (!next) {
+      const host = document.createElement('div');
+      host.className = 'editor-surface';
+      host.hidden = true;
+      editorRoot.appendChild(host);
+      let surface: EditorSurface;
+      try {
+        surface = nextMode === 'wysiwyg'
+          ? await (await import('./editor/markdown')).createMarkdownEditor(host, text, markDirty)
+          : (await import('./editor/plaintext')).createPlainEditor(host, text, markDirty, nextMode === 'source');
+      } catch (error) { host.remove(); throw error; }
+      if (seq !== mountSeq) { surface.destroy(); host.remove(); return; }
+      next = { editor: surface, host };
+    } else if (next.editor.getText() !== text) {
+      next.editor.setText(text);
     }
-  } else {
-    editor = createPlainEditor(editorRoot, text, markDirty);
+    if (!preserve) {
+      for (const previous of surfaces.values()) { previous.editor.destroy(); previous.host.remove(); }
+      surfaces.clear();
+    }
+    for (const previous of surfaces.values()) previous.host.hidden = true;
+    surfaces.set(nextMode, next);
+    next.host.hidden = false;
+    editor = next.editor;
+    discarding = false;
+    mode = nextMode;
+    welcomeEl.hidden = true;
+    editorRoot.inert = false;
+    editor.focus();
+    if (position) editor.restorePosition?.(position);
+    if (preserve) animateSurface(next.host, [{ opacity: .72 }, { opacity: 1 }], 120);
+    editorRoot.scrollTop = preserve ? scrollTop : 0;
+    refreshStatus();
+    updateWordCount(text);
+    activated = true;
+    document.dispatchEvent(new Event('document-change'));
+  } finally {
+    if (seq === mountSeq) {
+      mounting = false;
+      editorRoot.setAttribute('aria-busy', 'false');
+      editorRoot.inert = false;
+      if (activated) checkpointSession();
+      // Development-only measurement: activation work, not end-to-end input/paint latency.
+      if (import.meta.env.DEV && preserve) editorRoot.dataset.switchMs = (performance.now() - started).toFixed(2);
+      if (import.meta.env.VITE_PERF_PROBE === '1' && preserve) performance.measure('marginalia:view', { start: started, end: performance.now() });
+    }
   }
-  editor.focus();
-  refreshStatus();
-  updateWordCount(text);
-  // Let any normalization transactions from editor creation settle first.
-  setTimeout(() => {
-    if (seq === mountSeq) mounting = false;
-  }, 100);
 }
 
 /** Returns true when it is safe to replace the current document. */
@@ -108,16 +167,24 @@ export async function guardDirty(): Promise<boolean> {
   const choice = await confirmDiscard(currentFileName());
   if (choice === "cancel") return false;
   if (choice === "save") return save();
+  discarding = true;
+  discardSession();
   return true;
 }
 
 export async function newFile(): Promise<void> {
   if (!(await guardDirty())) return;
+  const previousFile = file, previousDirty = dirty, previousMode = mode;
   hideNotice();
   file = { path: null, name: "Untitled.md", kind: "markdown", savedText: "", imported: false };
   dirty = false;
   refreshTitle();
-  await mountEditor("wysiwyg", "");
+  try { await mountEditor("wysiwyg", ""); }
+  catch {
+    file = previousFile; dirty = previousDirty; mode = previousMode; discarding = false;
+    refreshTitle(); refreshStatus(); checkpointSession();
+    showNotice('Couldn’t create the editor. Your previous document is still open.');
+  }
 }
 
 export async function openViaDialog(): Promise<void> {
@@ -127,6 +194,7 @@ export async function openViaDialog(): Promise<void> {
 
 export async function openPath(path: string): Promise<void> {
   if (!(await guardDirty())) return;
+  const previousFile = file, previousDirty = dirty, previousMode = mode;
   hideNotice();
   const ext = extOf(path);
   const name = baseName(path);
@@ -184,45 +252,63 @@ export async function openPath(path: string): Promise<void> {
       await mountEditor("plain", text);
     }
   } catch (err) {
+    file = previousFile; dirty = previousDirty; mode = previousMode; discarding = false;
+    refreshTitle(); refreshStatus(); checkpointSession();
     removeRecentFile(path);
     showNotice(`Could not open ${name}: ${String(err)}`);
   }
 }
 
 export async function save(): Promise<boolean> {
-  if (!file || !editor) return false;
-  if (!file.path) return saveAs();
-  try {
-    const text = editor.getText();
-    await writeTextFile(file.path, text);
-    file.savedText = text;
-    dirty = false;
-    refreshTitle();
-    return true;
-  } catch (err) {
-    showNotice(`Save failed: ${String(err)}`);
-    return false;
-  }
+  return beginSave(false);
 }
 
 export async function saveAs(): Promise<boolean> {
+  return beginSave(true);
+}
+
+function beginSave(asCopy: boolean): Promise<boolean> {
+  if (saving) return saving;
+  saving = persistDocument(asCopy).finally(() => { saving = null; checkpointSession(); });
+  refreshSaveStatus();
+  return saving;
+}
+
+async function persistDocument(asCopy: boolean): Promise<boolean> {
   if (!file || !editor) return false;
-  const path = await pickSavePath(file.name, file.kind === "markdown");
-  if (!path) return false;
+  const documentToSave = file;
+  const surface = editor;
   try {
-    const text = editor.getText();
+    const path = asCopy || !documentToSave.path
+      ? await pickSavePath(documentToSave.name, documentToSave.kind === "markdown")
+      : documentToSave.path;
+    if (!path || file !== documentToSave) return false;
+    const text = surface.getText();
+    if (path === documentToSave.path) {
+      const disk = await readTextFile(path);
+      if (disk !== documentToSave.savedText) {
+        showNotice('This file changed in another app. Save a copy to keep both versions.',
+          { label: 'Save a copy', run: () => { void saveAs(); } });
+        return false;
+      }
+    }
+    if (file !== documentToSave) return false;
     await writeTextFile(path, text);
-    file.path = path;
-    file.name = baseName(path);
-    file.imported = false;
-    file.savedText = text;
-    dirty = false;
+    documentToSave.path = path;
+    documentToSave.name = baseName(path);
+    documentToSave.imported = false;
+    documentToSave.savedText = text;
     addRecentFile(path);
+    // An asynchronous save must never mark a newer revision or another file saved.
+    if (file !== documentToSave) return false;
+    dirty = editor?.getText() !== text;
     refreshTitle();
     refreshStatus();
-    return true;
+    return !dirty;
   } catch (err) {
-    showNotice(`Save failed: ${String(err)}`);
+    showNotice(`Couldn’t save this document. ${String(err)}`, {
+      label: "Save a copy", run: () => { void saveAs(); },
+    });
     return false;
   }
 }
@@ -273,6 +359,55 @@ export async function renameCurrentFile(nextName: string): Promise<boolean> {
   return true;
 }
 
+export async function restoreSession(): Promise<boolean> {
+  const session = readSession();
+  if (!session) return false;
+  let disk: string | null = null;
+  if (session.file.path) {
+    try { disk = await readTextFile(session.file.path); } catch { /* recover a copy below */ }
+  }
+  const decision = recoveryDecision(session, disk);
+  file = { ...session.file };
+  dirty = session.dirty;
+  let text = session.text;
+  if (decision === 'disk') { text = disk!; file.savedText = text; dirty = false; }
+  if (decision === 'copy') {
+    file.path = null;
+    dirty = true;
+    showNotice('Your file changed or is unavailable. Recovered your work as a separate draft.',
+      { label: 'Save a copy', run: () => { void saveAs(); } });
+  }
+  const restoredMode = file.kind === 'plain' ? 'plain'
+    : text.length > LARGE_MD_THRESHOLD ? 'source' : session.mode === 'plain' ? 'wysiwyg' : session.mode;
+  refreshTitle();
+  await mountEditor(restoredMode, text);
+  if (session.position) editor?.restorePosition?.(session.position);
+  if (session.dirty && decision === 'draft') showNotice('Recovered your unsaved draft.');
+  return true;
+}
+
+export async function checkExternalChanges(): Promise<void> {
+  if (!file?.path || !editor || saving || mounting) return;
+  const current = file;
+  try {
+    const disk = await readTextFile(current.path!);
+    if (file !== current || saving || disk === current.savedText) return;
+    if (dirty) {
+      showNotice('This file changed in another app. Your draft is kept here.',
+        { label: 'Save a copy', run: () => { void saveAs(); } });
+      return;
+    }
+    const position = editor.capturePosition?.();
+    current.savedText = disk;
+    await mountEditor(mode, disk);
+    if (position) editor?.restorePosition?.(position);
+    showNotice('Updated from disk.');
+  } catch {
+    showNotice('This file is unavailable. Your work is still open.',
+      { label: 'Save a copy', run: () => { void saveAs(); } });
+  }
+}
+
 async function switchToWysiwyg(): Promise<void> {
   if (!editor) return;
   await mountEditor("wysiwyg", editor.getText());
@@ -280,7 +415,8 @@ async function switchToWysiwyg(): Promise<void> {
 
 /** Ctrl+/ — flip a markdown document between WYSIWYG and raw source. */
 export async function toggleSource(): Promise<void> {
-  if (!file || !editor || file.kind !== "markdown") return;
+  if (!file || !editor || mounting || file.kind !== "markdown") return;
   const text = editor.getText();
-  await mountEditor(mode === "wysiwyg" ? "source" : "wysiwyg", text);
+  await mountEditor(mode === "wysiwyg" ? "source" : "wysiwyg", text, true);
 }
+

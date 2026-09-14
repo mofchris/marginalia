@@ -1,0 +1,51 @@
+/* One motion vocabulary: immediate pressure, quick exits, decelerating arrivals. */
+:root {
+  --motion-feedback: 110ms;
+  --motion-arrive: 180ms;
+  --motion-exit: 100ms;
+  --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:is(.tb-btn, .sb-btn, .file-title-btn, .outline-item, .menu-item, .notice-btn, .primary-btn, .ghost-btn, .danger-btn) {
+  transition: background-color var(--motion-feedback) ease-out, color var(--motion-feedback) ease-out,
+    border-color var(--motion-feedback) ease-out, transform var(--motion-feedback) var(--motion-ease);
+}
+:is(.tb-btn, .sb-btn, .notice-btn, .primary-btn, .ghost-btn, .danger-btn):active:not(:disabled) {
+  transform: scale(.96);
+  transition-duration: 0s;
+}
+:is(.tb-btn, .sb-btn)[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-text); }
+.outline-item:focus-visible, .menu-item:focus-visible { background: var(--hover); }
+
+/* Only small floating surfaces retain paint during dismissal. Logical state,
+   focus, and accessibility close immediately through setOverlayVisible. */
+@supports (transition-behavior: allow-discrete) {
+  .menu, .modal-backdrop {
+    opacity: 1;
+    transition: opacity var(--motion-arrive) var(--motion-ease),
+      transform var(--motion-arrive) var(--motion-ease), display var(--motion-arrive) allow-discrete;
+  }
+  .menu { transform-origin: top left; transform: translateY(0) scale(1); }
+  .menu[hidden] { opacity: 0; transform: translateY(-4px) scale(.985); }
+  .modal-backdrop[hidden] { opacity: 0; }
+  .menu[hidden], .modal-backdrop[hidden] { transition-duration: var(--motion-exit); pointer-events: none; }
+  .modal { transform: translateY(0) scale(1); transition: transform var(--motion-arrive) var(--motion-ease); }
+  .modal-backdrop[hidden] .modal { transform: translateY(6px) scale(.985); transition-duration: var(--motion-exit); }
+  @starting-style {
+    .menu { opacity: 0; transform: translateY(-4px) scale(.985); }
+    .modal-backdrop { opacity: 0; }
+    .modal { transform: translateY(8px) scale(.985); }
+  }
+}
+
+@keyframes panel-arrive { from { opacity: .45; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes controls-arrive { from { opacity: .5; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+#outline-panel:not([hidden]) { animation: panel-arrive var(--motion-arrive) var(--motion-ease); }
+#find-bar:not([hidden]), #exit-focus:not([hidden]), .notice-bar:not([hidden]) { animation: controls-arrive var(--motion-arrive) var(--motion-ease); }
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.tb-btn, .sb-btn, .file-title-btn, .outline-item, .menu-item, .notice-btn, .primary-btn, .ghost-btn, .danger-btn,
+      .menu, .modal-backdrop, .modal) { transition: none; transform: none; }
+  #outline-panel, #find-bar, #exit-focus, .notice-bar { animation: none !important; }
+  :is(.tb-btn, .sb-btn, .notice-btn, .primary-btn, .ghost-btn, .danger-btn):active:not(:disabled) { transform: none; }
+}

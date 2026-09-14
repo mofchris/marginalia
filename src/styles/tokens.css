@@ -50,6 +50,7 @@
 
 /* ---- Light: warm paper ---- */
 :root[data-theme="light"] {
+  color-scheme: light;
   --accent-text: #b83527;
   --bg: #f4f1ec;              /* window background — warm paper */
   --bg-raised: #efebe4;       /* toolbars, panels */
@@ -68,6 +69,7 @@
 
 /* ---- Dark: warm charcoal ---- */
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --bg: #232120;
   --bg-raised: #2a2725;
   --bg-inset: #1d1b1a;

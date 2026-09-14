@@ -1,0 +1,91 @@
+import type { EditorSurface } from '../types';
+import { findMatches, type TextMatch } from '../editor/search';
+import { transitionLayout } from './motion';
+
+export function initWritingTools(getEditor: () => EditorSurface | null): void {
+  const el = (id: string) => document.getElementById(id)!;
+  const on = (id: string, action: () => void) => el(id).addEventListener('click', action);
+  const bar = el('find-bar');
+  const query = el('find-query') as HTMLInputElement;
+  const replacement = el('replace-text') as HTMLInputElement;
+  const caseBox = el('find-case') as HTMLInputElement;
+  const outline = el('outline-panel');
+  let matches: TextMatch[] = [];
+  let index = 0;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  function refreshSearch(select = true): void {
+    matches = findMatches(getEditor()?.getSearchText?.() ?? '', query.value, caseBox.checked);
+    index = Math.max(0, Math.min(index, matches.length - 1));
+    el('find-count').textContent = !query.value ? '' : matches.length ? `${index + 1} of ${matches.length}` : 'No matches';
+    for (const id of ['find-prev', 'find-next', 'replace-one', 'replace-all']) (el(id) as HTMLButtonElement).disabled = !matches.length;
+    const match = matches[index];
+    if (select && match) getEditor()?.selectRange?.(match.from, match.to);
+  }
+  function openFind(replace = false): void {
+    if (!getEditor()) return;
+    transitionLayout(() => { bar.hidden = false; el('replace-row').hidden = !replace; });
+    el('replace-toggle').setAttribute('aria-expanded', String(replace));
+    query.focus(); query.select(); refreshSearch(false);
+  }
+  function closeFind(): void { transitionLayout(() => { bar.hidden = true; }); getEditor()?.focus(); }
+  function navigate(direction: number): void {
+    if (!matches.length) return;
+    index = (index + direction + matches.length) % matches.length; refreshSearch();
+  }
+  function replace(all: boolean): void {
+    refreshSearch(false);
+    if (!matches.length) return;
+    getEditor()?.replaceRanges?.(all ? matches : [matches[index]], replacement.value);
+    refreshSearch();
+  }
+  query.addEventListener('input', () => { index = 0; refreshSearch(); });
+  caseBox.addEventListener('change', () => { index = 0; refreshSearch(); });
+  bar.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { event.preventDefault(); closeFind(); }
+    else if (event.key === 'Enter') { event.preventDefault(); navigate(event.shiftKey ? -1 : 1); }
+    event.stopPropagation();
+  });
+  on('btn-find', () => openFind()); on('find-close', closeFind);
+  on('find-prev', () => navigate(-1)); on('find-next', () => navigate(1));
+  on('replace-toggle', () => {
+    transitionLayout(() => { el('replace-row').hidden = !el('replace-row').hidden; });
+    el('replace-toggle').setAttribute('aria-expanded', String(!el('replace-row').hidden));
+  });
+  on('replace-one', () => replace(false)); on('replace-all', () => replace(true));
+  function refreshOutline(): void {
+    if (outline.hidden) return;
+    const list = el('outline-items'); list.replaceChildren();
+    const headings = getEditor()?.getHeadings?.() ?? [];
+    if (!headings.length) {
+      const text = document.createElement('p'); text.textContent = 'No headings in this document.'; list.appendChild(text);
+    }
+    for (const heading of headings) {
+      const button = document.createElement('button'); button.className = 'outline-item';
+      button.textContent = heading.text || 'Untitled heading'; button.style.paddingLeft = `${8 + (heading.level - 1) * 10}px`;
+      button.addEventListener('click', () => { getEditor()?.selectRange?.(heading.from, heading.from); getEditor()?.focus(); });
+      list.appendChild(button);
+    }
+  }
+  function toggleOutline(): void {
+    transitionLayout(() => { outline.hidden = !outline.hidden; refreshOutline(); });
+    el('btn-outline').setAttribute('aria-pressed', String(!outline.hidden));
+    if (outline.hidden) getEditor()?.focus();
+  }
+  function toggleFocus(): void {
+    const enabled = document.body.dataset.focus !== 'true';
+    transitionLayout(() => { document.body.dataset.focus = String(enabled); });
+    el('exit-focus').hidden = !enabled; el('btn-focus').setAttribute('aria-pressed', String(enabled)); getEditor()?.focus();
+  }
+  on('btn-outline', toggleOutline); on('outline-close', toggleOutline);
+  on('btn-focus', toggleFocus); on('exit-focus', toggleFocus);
+  document.addEventListener('document-change', () => {
+    clearTimeout(timer); timer = setTimeout(() => { if (!bar.hidden) refreshSearch(false); refreshOutline(); }, 180);
+  });
+  window.addEventListener('keydown', event => {
+    if (!el('modal-backdrop').hidden) return;
+    const mod = event.ctrlKey || event.metaKey, key = event.key.toLowerCase();
+    if (mod && (key === 'f' || key === 'h')) { event.preventDefault(); openFind(key === 'h'); }
+    else if (mod && event.shiftKey && key === 'o') { event.preventDefault(); toggleOutline(); }
+    else if (event.key === 'F8' || (event.key === 'Escape' && document.body.dataset.focus === 'true')) { event.preventDefault(); toggleFocus(); }
+  });
+}

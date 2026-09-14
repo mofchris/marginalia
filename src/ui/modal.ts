@@ -1,3 +1,5 @@
+import { setOverlayVisible } from './motion';
+
 interface ModalChoice {
   label: string;
   value: string;
@@ -30,7 +32,7 @@ export function showModal(message: string, choices: ModalChoice[]): Promise<stri
       if (settled) return;
       settled = true;
       document.removeEventListener("keydown", onKeydown, true);
-      backdrop.hidden = true;
+      setOverlayVisible(backdrop, false);
       previouslyFocused?.focus?.();
       resolve(value);
     };
@@ -80,7 +82,7 @@ export function showModal(message: string, choices: ModalChoice[]): Promise<stri
       actionsEl.appendChild(btn);
     }
 
-    backdrop.hidden = false;
+    setOverlayVisible(backdrop, true);
     // Listen in the capture phase so the dialog sees keys before the window
     // level shortcut handler does.
     document.addEventListener("keydown", onKeydown, true);

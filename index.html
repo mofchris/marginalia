@@ -9,7 +9,7 @@
   <body>
     <div id="app">
       <header id="topbar">
-        <div class="topbar-group">
+        <div class="topbar-group file-controls">
           <button id="btn-new" class="tb-btn" title="New file (Ctrl+N)" aria-label="New file">
             <svg viewBox="0 0 16 16" width="15" height="15"><path d="M9 1H4a1.5 1.5 0 0 0-1.5 1.5v11A1.5 1.5 0 0 0 4 15h8a1.5 1.5 0 0 0 1.5-1.5V5.5L9 1Z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M9 1v4.5h4.5" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
           </button>
@@ -31,27 +31,54 @@
           <button id="file-name-btn" class="file-title-btn" title="Rename (Enter)" aria-label="Rename file"><span id="file-name">Untitled</span></button><span id="dirty-dot" class="dirty-dot" hidden>&#9679;</span>
           <input id="file-name-input" class="file-title-input" aria-label="File name" spellcheck="false" autocomplete="off" hidden />
         </div>
-        <div class="topbar-group">
+        <div class="topbar-actions">
+          <div class="writing-controls">
+            <button id="btn-find" class="sb-btn" title="Find (Ctrl+F)">Find</button>
+            <button id="btn-outline" class="sb-btn" aria-pressed="false" title="Outline (Ctrl+Shift+O)">Outline</button>
+            <button id="btn-focus" class="sb-btn" aria-pressed="false" title="Focus mode (F8)">Focus</button>
+          </div>
+          <div class="topbar-group view-controls">
           <button id="btn-source" class="tb-btn" title="Toggle source view (Ctrl+/)" aria-label="Show Markdown source" aria-pressed="false">
             <svg viewBox="0 0 16 16" width="15" height="15"><path d="m5.5 4.5-4 3.5 4 3.5M10.5 4.5l4 3.5-4 3.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <button id="btn-theme" class="tb-btn" title="Toggle light/dark theme" aria-label="Toggle light or dark theme">
             <svg viewBox="0 0 16 16" width="15" height="15"><path d="M13.5 9.5A5.8 5.8 0 0 1 6.5 2.5a5.8 5.8 0 1 0 7 7Z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
           </button>
+          </div>
         </div>
       </header>
+      <section id="find-bar" aria-label="Find and replace" hidden>
+        <div class="find-row">
+          <input id="find-query" type="search" aria-label="Find in document" placeholder="Find in document" />
+          <span id="find-count" role="status"></span>
+          <button id="find-prev" class="sb-btn" aria-label="Previous match">Previous</button>
+          <button id="find-next" class="sb-btn" aria-label="Next match">Next</button>
+          <label><input id="find-case" type="checkbox" /> Match case</label>
+          <button id="replace-toggle" class="sb-btn" aria-expanded="false" aria-controls="replace-row">Replace</button>
+          <button id="find-close" class="sb-btn" aria-label="Close find">Close</button>
+        </div>
+        <div id="replace-row" class="find-row" hidden>
+          <input id="replace-text" aria-label="Replace with" placeholder="Replace with" />
+          <button id="replace-one" class="sb-btn">Replace</button>
+          <button id="replace-all" class="sb-btn">Replace all</button>
+        </div>
+      </section>
       <div id="notice-bar" class="notice-bar" role="status" aria-live="polite" hidden>
         <span id="notice-text"></span>
         <button id="notice-action" class="notice-btn" hidden></button>
         <button id="notice-close" class="notice-btn">Dismiss</button>
       </div>
       <main id="editor-host">
+        <aside id="outline-panel" aria-label="Document outline" hidden>
+          <div class="outline-heading"><strong>Outline</strong><button id="outline-close" class="sb-btn" aria-label="Close outline">Close</button></div>
+          <nav id="outline-items" aria-label="Headings"></nav>
+        </aside>
         <div id="editor-root"></div>
         <div id="welcome" class="welcome" hidden>
           <div class="welcome-inner">
-            <div class="welcome-logo">M</div>
+            <img class="welcome-logo" src="/src-tauri/icons/128x128@2x.png" width="64" height="64" alt="" />
             <h1>Marginalia</h1>
-            <p>Open a Markdown file or start typing. Drop a file anywhere in this window.</p>
+            <p>Open a Markdown file or create a new document. Drop a file anywhere in this window.</p>
             <div class="welcome-actions">
               <button id="welcome-open" class="primary-btn">Open a file</button>
               <button id="welcome-new" class="ghost-btn">New document</button>
@@ -62,6 +89,7 @@
       </main>
       <footer id="statusbar">
         <span id="status-type"></span>
+        <span id="save-status" role="status" aria-live="polite"></span>
         <span class="status-spacer"></span>
         <span id="status-words"></span>
         <span class="status-sep"></span>
@@ -73,6 +101,7 @@
         </span>
       </footer>
     </div>
+    <button id="exit-focus" class="ghost-btn" hidden>Show controls (Esc)</button>
     <div id="modal-backdrop" class="modal-backdrop" hidden>
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-message" tabindex="-1">
         <p id="modal-message"></p>
