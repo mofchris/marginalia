@@ -41,6 +41,28 @@
   caret-color: var(--accent);
 }
 
+/* ---- One cursor ----
+   Crepe's virtual cursor draws its own caret, with a softer fade than the
+   native blink, and hides the native caret with a (0,2,0) rule. The
+   caret-color above out-ranks that at (1,2,0), so both carets showed. */
+#editor-root .milkdown .ProseMirror.virtual-cursor-enabled {
+  caret-color: transparent;
+}
+
+/* Crepe colours the virtual cursor with --crepe-color-outline, a border tone
+   at only 1.6:1 against the page. Keep the caret colour the app always used. */
+#editor-root .milkdown .ProseMirror-focused {
+  --prosemirror-virtual-cursor-color: var(--accent);
+}
+
+/* The plugin measures the caret with getBoundingClientRect, which already
+   includes the editor zoom, then writes those pixels inside the zoomed editor,
+   so the zoom was applied twice: 10% too far and too tall at 110%, and far
+   worse at higher zoom. Cancelling it on the cursor itself restores 1:1. */
+#editor-root .prosemirror-virtual-cursor {
+  zoom: calc(1 / var(--zoom, 1));
+}
+
 #editor-root .milkdown .ProseMirror a {
   color: var(--accent-text);
 }

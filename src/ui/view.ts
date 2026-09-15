@@ -78,6 +78,10 @@ function apply(): void {
   // for anyone who reaches these by keyboard or screen reader.
   zoomLabel.setAttribute("aria-label", `Zoom ${zoom}%, reset to 100%`);
   widthBtn.setAttribute("aria-label", `Column width: ${WIDTH_LABELS[width]}`);
+  // The rich editor's virtual cursor only repositions on selectionchange, and
+  // zoom or width changes move the text without firing one, which stranded the
+  // cursor at its old size and position until the caret next moved.
+  document.dispatchEvent(new Event("selectionchange"));
 }
 
 function persist(): void {
