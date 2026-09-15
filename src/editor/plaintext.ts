@@ -1,16 +1,29 @@
-import { EditorState } from '@codemirror/state';
-import { EditorView, keymap } from '@codemirror/view';
+import { EditorState, StateEffect, StateField } from '@codemirror/state';
+import { Decoration, type DecorationSet, EditorView, keymap } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import type { EditorSurface } from '../types';
 import { captureTextPosition, locatePosition } from './position';
 import { sourceHeadings } from './outline';
+
+/** Search matches, drawn as marks so they show while the find bar has focus. */
+const setMatches = StateEffect.define<DecorationSet>();
+const matchField = StateField.define<DecorationSet>({
+  create: () => Decoration.none,
+  update: (marks, transaction) => {
+    for (const effect of transaction.effects) if (effect.is(setMatches)) return effect.value;
+    return marks.map(transaction.changes);
+  },
+  provide: field => EditorView.decorations.from(field),
+});
+const matchMark = Decoration.mark({ class: 'search-match' });
+const currentMark = Decoration.mark({ class: 'search-match search-current' });
 
 /** Transaction history includes changes made in the other view and replacements. */
 export function createPlainEditor(root: HTMLElement, initial: string, onChange: () => void, markdown = false): EditorSurface {
   const view = new EditorView({
     parent: root,
     state: EditorState.create({ doc: initial, extensions: [
-      history(), keymap.of([...defaultKeymap, ...historyKeymap]), EditorView.lineWrapping,
+      history(), keymap.of([...defaultKeymap, ...historyKeymap]), EditorView.lineWrapping, matchField,
       EditorView.contentAttributes.of({ 'aria-label': 'Document source', spellcheck: 'false' }),
       EditorView.updateListener.of(update => { if (update.docChanged) onChange(); }),
       EditorView.theme({
@@ -49,5 +62,13 @@ export function createPlainEditor(root: HTMLElement, initial: string, onChange: 
     replaceRanges: (ranges, replacement) => {
       view.dispatch({ changes: ranges.map(({ from, to }) => ({ from, to, insert: replacement })) });
     },
+    showMatches: (ranges, current) => {
+      const marks = Decoration.set(ranges.map((range, i) => (i === current ? currentMark : matchMark).range(range.from, range.to)), true);
+      const target = ranges[current];
+      view.dispatch({ effects: target
+        ? [setMatches.of(marks), EditorView.scrollIntoView(target.from, { y: 'center' })]
+        : [setMatches.of(marks)] });
+    },
+    clearMatches: () => { view.dispatch({ effects: setMatches.of(Decoration.none) }); },
   };
 }

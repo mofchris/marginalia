@@ -65,6 +65,8 @@
   --selected: rgba(43, 41, 38, 0.1);
   --shadow: 0 4px 18px rgba(43, 41, 38, 0.12);
   --selection: rgba(222, 74, 60, 0.18);
+  --search-match: rgba(222, 74, 60, 0.14);
+  --search-current: rgba(222, 74, 60, 0.3);
 }
 
 /* ---- Dark: warm charcoal ---- */
@@ -82,6 +84,8 @@
   --selected: rgba(232, 227, 218, 0.12);
   --shadow: 0 4px 18px rgba(12, 11, 10, 0.5);
   --selection: rgba(222, 74, 60, 0.28);
+  --search-match: rgba(226, 88, 74, 0.2);
+  --search-current: rgba(226, 88, 74, 0.42);
 
   --accent: #e2584a;
   --accent-strong: #ea6c5f;

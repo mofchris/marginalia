@@ -24,6 +24,13 @@ export interface EditorSurface {
   selectRange?(from: number, to: number): void;
   replaceRanges?(ranges: { from: number; to: number }[], replacement: string): void;
   getHeadings?(): { text: string; level: number; from: number }[];
+  /**
+   * Highlight search matches (offsets into getSearchText) and scroll the current
+   * one into view. Unlike selectRange this works while the editor is unfocused,
+   * which it always is while someone is typing in the find bar.
+   */
+  showMatches?(ranges: { from: number; to: number }[], current: number): void;
+  clearMatches?(): void;
 }
 
 export interface EditorPosition {

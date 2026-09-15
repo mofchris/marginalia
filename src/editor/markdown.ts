@@ -1,7 +1,8 @@
 import { Crepe } from "@milkdown/crepe";
 import { $prose, replaceAll } from "@milkdown/kit/utils";
-import { editorViewCtx } from '@milkdown/kit/core';
-import { Plugin, TextSelection } from '@milkdown/kit/prose/state';
+import { editorViewCtx, editorViewOptionsCtx } from '@milkdown/kit/core';
+import { Plugin, PluginKey, TextSelection } from '@milkdown/kit/prose/state';
+import { Decoration, DecorationSet } from '@milkdown/kit/prose/view';
 import { syntaxRevealPlugin } from "./syntax-reveal";
 import { codeTheme } from "./code-theme";
 import type { EditorSurface } from "../types";
@@ -34,6 +35,30 @@ export async function createMarkdownEditor(
   });
 
   crepe.editor.use($prose(() => syntaxRevealPlugin));
+
+  // Search matches, drawn as decorations: ProseMirror only paints and scrolls to
+  // its own selection while focused, and the find bar holds focus while in use.
+  const searchKey = new PluginKey<DecorationSet>('marginalia-search');
+  crepe.editor.use($prose(() => new Plugin<DecorationSet>({
+    key: searchKey,
+    state: {
+      init: () => DecorationSet.empty,
+      apply: (transaction, marks) => transaction.getMeta(searchKey) ?? marks.map(transaction.mapping, transaction.doc),
+    },
+    props: { decorations: state => searchKey.getState(state) },
+  })));
+
+  // Milkdown's clipboard plugin writes the plain-text flavour as Markdown, so
+  // pasting anywhere that reads plain text showed ### and **. Direct view props
+  // win over plugin props, so this keeps the plugin's Markdown-aware pasting
+  // while copying behaves like a word processor: the HTML flavour keeps the
+  // formatting, the plain flavour is just the words. Source view still copies
+  // Markdown for anyone who wants it.
+  crepe.editor.config(ctx => ctx.update(editorViewOptionsCtx, options => ({
+    ...options,
+    clipboardTextSerializer: slice => slice.content.textBetween(0, slice.content.size, '\n\n',
+      node => (node.type.name === 'hardbreak' ? '\n' : '')),
+  })));
 
   let ready = false;
   let synchronizing = false;
@@ -73,13 +98,35 @@ export async function createMarkdownEditor(
     return { view, text, positions, headings };
   }
 
+  /** Map a search-text range to document positions. The end comes from the last
+   *  matched character: `positions[to]` can be the separator before the next
+   *  block, which would put the end outside the block the match is in. */
+  function docRange(positions: number[], from: number, to: number) {
+    return { from: positions[from], to: to > from ? positions[to - 1] + 1 : positions[from] };
+  }
+
   return {
     getText: () => latest(),
     getSearchText: () => textIndex().text,
     getHeadings: () => textIndex().headings,
     selectRange: (from, to) => {
       const { view, positions } = textIndex();
-      view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, positions[from], positions[to])).scrollIntoView());
+      const range = docRange(positions, from, to);
+      view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, range.from, range.to)).scrollIntoView());
+    },
+    showMatches: (ranges, current) => {
+      const { view, positions } = textIndex();
+      const marks = DecorationSet.create(view.state.doc, ranges.map((range, i) => {
+        const { from, to } = docRange(positions, range.from, range.to);
+        return Decoration.inline(from, to, { class: i === current ? 'search-match search-current' : 'search-match' });
+      }));
+      view.dispatch(view.state.tr.setMeta(searchKey, marks).setMeta('addToHistory', false));
+      // Scroll the highlight itself, since selection-based scrolling needs focus.
+      view.dom.querySelector('.search-current')?.scrollIntoView?.({ block: 'center' });
+    },
+    clearMatches: () => {
+      const view = crepe.editor.ctx.get(editorViewCtx);
+      view.dispatch(view.state.tr.setMeta(searchKey, DecorationSet.empty).setMeta('addToHistory', false));
     },
     replaceRanges: (ranges, replacement) => {
       const { view, positions } = textIndex();

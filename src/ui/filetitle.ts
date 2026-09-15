@@ -5,6 +5,9 @@ const inputEl = document.getElementById("file-name-input") as HTMLInputElement;
 let editing = false;
 let cancelled = false;
 
+/** `confirmed` is true when the name was committed with Enter rather than by clicking away. */
+type Commit = (name: string, confirmed: boolean) => Promise<boolean>;
+
 /**
  * Click-to-rename on the top bar title. `commit` performs the actual rename
  * and reports success; `canEdit` gates it so the welcome screen isn't editable.
@@ -13,10 +16,7 @@ let cancelled = false;
  * The trigger is a real <button> rather than a click handler on the title div,
  * so it is reachable by Tab and activates on Enter and Space for free.
  */
-export function initFileTitle(
-  commit: (name: string) => Promise<boolean>,
-  canEdit: () => boolean,
-): void {
+export function initFileTitle(commit: Commit, canEdit: () => boolean): void {
   btnEl.addEventListener("click", () => {
     if (!editing && canEdit()) begin();
   });
@@ -29,17 +29,17 @@ export function initFileTitle(
   inputEl.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      void end(commit, true);
+      void end(commit, true, true);
     } else if (e.key === "Escape") {
       e.preventDefault();
       cancelled = true;
-      void end(commit, true);
+      void end(commit, true, false);
     }
     // Keep editing keystrokes away from the global shortcut handler.
     e.stopPropagation();
   });
 
-  inputEl.addEventListener("blur", () => void end(commit, false));
+  inputEl.addEventListener("blur", () => void end(commit, false, false));
 }
 
 function begin(): void {
@@ -63,10 +63,7 @@ function begin(): void {
  * keyboard, so focus returns to the button the user started from. A blur
  * caused by clicking elsewhere must not yank focus back.
  */
-async function end(
-  commit: (name: string) => Promise<boolean>,
-  restoreFocus: boolean,
-): Promise<void> {
+async function end(commit: Commit, restoreFocus: boolean, confirmed: boolean): Promise<void> {
   if (!editing) return;
   editing = false;
 
@@ -77,7 +74,9 @@ async function end(
   btnEl.hidden = false;
   if (restoreFocus) btnEl.focus();
 
-  if (cancelled || !next || next === previous) return;
+  // Enter still commits an unchanged name: for a document that has never been
+  // saved, confirming the name is how it gets saved.
+  if (cancelled || !next || (next === previous && !confirmed)) return;
   // On failure app.ts reports why and leaves the old name in place.
-  await commit(next);
+  await commit(next, confirmed);
 }

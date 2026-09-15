@@ -71,6 +71,28 @@ test('failed save preserves the text and offers recovery', async () => {
   expect(document.getElementById('notice-bar')!.hidden).toBe(false);
 });
 
+test("pressing Enter on a new document's name saves it under that name", async () => {
+  const app = await import('../src/app');
+  await app.newFile();
+  await vi.advanceTimersByTimeAsync(120);
+  type('A fresh draft');
+  io.pickSave.mockResolvedValueOnce('/docs/notes.md');
+  expect(await app.renameCurrentFile('notes', true)).toBe(true);
+  // No extension typed: the Markdown document keeps its kind instead of becoming plain text.
+  expect(io.pickSave).toHaveBeenCalledWith('notes.md', true);
+  expect(io.write).toHaveBeenCalledWith('/docs/notes.md', 'A fresh draft');
+  expect(app.isDirty()).toBe(false);
+});
+
+test('naming a new document without pressing Enter only renames it', async () => {
+  const app = await import('../src/app');
+  await app.newFile();
+  await vi.advanceTimersByTimeAsync(120);
+  expect(await app.renameCurrentFile('draft', false)).toBe(true);
+  expect(io.pickSave).not.toHaveBeenCalled();
+  expect(document.getElementById('file-name')!.textContent).toBe('draft.md');
+});
+
 test('a cancelled Save As leaves an untitled draft dirty', async () => {
   const app = await import('../src/app');
   await app.newFile();

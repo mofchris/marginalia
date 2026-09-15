@@ -320,17 +320,23 @@ function kindForName(name: string): OpenFile["kind"] {
 
 /**
  * Rename the open document from the title bar. Untitled and freshly imported
- * documents have nothing on disk yet, so they only take the new name locally
- * and carry it into the next Save As.
+ * documents have nothing on disk yet, so they take the new name locally, and
+ * when the name is confirmed with Enter they are saved under it straight away.
  */
-export async function renameCurrentFile(nextName: string): Promise<boolean> {
+export async function renameCurrentFile(nextName: string, confirmed = false): Promise<boolean> {
   if (!file) return false;
-  const name = nextName.trim();
-  if (!name || name === file.name) return false;
+  let name = nextName.trim();
+  if (!name) return false;
   if (/[\\/]/.test(name)) {
     showNotice("A file name cannot contain \\ or /.");
     return false;
   }
+
+  const unsaved = !file.path;
+  // "notes" means notes.md for a Markdown document. Without this the missing
+  // extension would count as a change of kind and turn it into plain text.
+  if (unsaved && !extOf(name)) name += file.kind === "markdown" ? ".md" : ".txt";
+  if (name === file.name) return unsaved && confirmed ? save() : false;
 
   const prevKind = file.kind;
 
@@ -356,7 +362,7 @@ export async function renameCurrentFile(nextName: string): Promise<boolean> {
   if (file.kind !== prevKind && editor) {
     await mountEditor(file.kind === "markdown" ? "wysiwyg" : "plain", editor.getText());
   }
-  return true;
+  return unsaved && confirmed ? save() : true;
 }
 
 export async function restoreSession(): Promise<boolean> {

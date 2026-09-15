@@ -33,7 +33,7 @@
         </div>
         <div class="topbar-actions">
           <div class="writing-controls">
-            <button id="btn-find" class="sb-btn" title="Find (Ctrl+F)">Find</button>
+            <button id="btn-find" class="sb-btn" aria-pressed="false" title="Find (Ctrl+F)">Find</button>
             <button id="btn-outline" class="sb-btn" aria-pressed="false" title="Outline (Ctrl+Shift+O)">Outline</button>
             <button id="btn-focus" class="sb-btn" aria-pressed="false" title="Focus mode (F8)">Focus</button>
           </div>
@@ -49,16 +49,30 @@
       </header>
       <section id="find-bar" aria-label="Find and replace" hidden>
         <div class="find-row">
-          <input id="find-query" type="search" aria-label="Find in document" placeholder="Find in document" />
-          <span id="find-count" role="status"></span>
-          <button id="find-prev" class="sb-btn" aria-label="Previous match">Previous</button>
-          <button id="find-next" class="sb-btn" aria-label="Next match">Next</button>
-          <label><input id="find-case" type="checkbox" /> Match case</label>
-          <button id="replace-toggle" class="sb-btn" aria-expanded="false" aria-controls="replace-row">Replace</button>
-          <button id="find-close" class="sb-btn" aria-label="Close find">Close</button>
+          <button id="replace-toggle" class="find-icon-btn" aria-expanded="false" aria-controls="replace-row" aria-label="Show replace" title="Replace (Ctrl+H)">
+            <svg viewBox="0 0 16 16" width="14" height="14"><path d="m6 4 4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="find-field">
+            <input id="find-query" type="text" aria-label="Find in document" placeholder="Find" autocomplete="off" spellcheck="false" />
+            <span id="find-count" class="find-count" role="status"></span>
+            <button id="find-case" class="find-toggle" aria-pressed="false" aria-label="Match case" title="Match case">Aa</button>
+          </div>
+          <button id="find-prev" class="find-icon-btn" aria-label="Previous match" title="Previous match (Shift+Enter)">
+            <svg viewBox="0 0 16 16" width="14" height="14"><path d="m4 10 4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button id="find-next" class="find-icon-btn" aria-label="Next match" title="Next match (Enter)">
+            <svg viewBox="0 0 16 16" width="14" height="14"><path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <span class="find-spacer"></span>
+          <button id="find-close" class="find-icon-btn" aria-label="Close find" title="Close (Esc)">
+            <svg viewBox="0 0 16 16" width="14" height="14"><path d="m4.5 4.5 7 7m0-7-7 7" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </button>
         </div>
         <div id="replace-row" class="find-row" hidden>
-          <input id="replace-text" aria-label="Replace with" placeholder="Replace with" />
+          <span class="find-indent" aria-hidden="true"></span>
+          <div class="find-field">
+            <input id="replace-text" type="text" aria-label="Replace with" placeholder="Replace with" autocomplete="off" spellcheck="false" />
+          </div>
           <button id="replace-one" class="sb-btn">Replace</button>
           <button id="replace-all" class="sb-btn">Replace all</button>
         </div>
@@ -101,7 +115,9 @@
         </span>
       </footer>
     </div>
-    <button id="exit-focus" class="ghost-btn" hidden>Show controls (Esc)</button>
+    <button id="exit-focus" aria-label="Exit focus mode" title="Exit focus mode (Esc)" hidden>
+      <svg viewBox="0 0 16 16" width="15" height="15"><path d="M6 2.5V6H2.5M10 2.5V6h3.5M6 13.5V10H2.5M10 13.5V10h3.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
     <div id="modal-backdrop" class="modal-backdrop" hidden>
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-message" tabindex="-1">
         <p id="modal-message"></p>
