@@ -2,6 +2,9 @@
 name = "marginalia"
 version = "0.1.7"
 description = "A lightweight WYSIWYG Markdown-first text editor"
+license = "MIT"
+authors = ["Christopher Mofunanya"]
+repository = "https://github.com/mofchris/marginalia"
 edition = "2021"
 
 [build-dependencies]

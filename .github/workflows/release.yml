@@ -7,9 +7,45 @@ on:
 
 permissions:
   contents: write
+  # Lets the SignPath action read the unsigned workflow artifact.
+  actions: read
+
+# Windows code signing through SignPath Foundation (free for open source).
+# It stays OFF until both of these exist in the repo settings
+# (Settings > Secrets and variables > Actions):
+#   secret   SIGNPATH_API_TOKEN       API token of the SignPath submitter user
+#   variable SIGNPATH_ORGANIZATION_ID SignPath organization id
+# Optional variables (defaults in brackets):
+#   SIGNPATH_PROJECT_SLUG [marginalia], SIGNPATH_SIGNING_POLICY_SLUG [release-signing],
+#   (the SignPath project's default artifact configuration is used)
+# Without them every platform builds and uploads unsigned, exactly as before.
+# See docs/signpath-application.md.
 
 jobs:
+  # Signed Windows installers are attached after the build, so create the
+  # draft release up front. Otherwise two Windows jobs could each create one.
+  # tauri-action finds and reuses this draft by its tag.
+  prepare-release:
+    name: Prepare draft release
+    if: vars.SIGNPATH_ORGANIZATION_ID != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create the draft release if it does not exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release $TAG already exists."
+          else
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --draft \
+              --title "Marginalia $TAG" --notes "" --verify-tag
+          fi
+
   build:
+    needs: prepare-release
+    # Run even when prepare-release was skipped (signing not set up).
+    if: ${{ !cancelled() && needs.prepare-release.result != 'failure' }}
     strategy:
       fail-fast: false
       matrix:
@@ -80,7 +116,26 @@ jobs:
             fi
           done
 
-      - uses: tauri-apps/tauri-action@v0
+      - name: Check whether SignPath signing is set up
+        id: signing
+        shell: bash
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ] && [ -n "$SIGNPATH_API_TOKEN" ] && [ -n "$SIGNPATH_ORGANIZATION_ID" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "SignPath signing is on for this job."
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "SignPath signing is off for this job; building unsigned."
+          fi
+
+      # Unsigned path (macOS always; Windows until SignPath is set up):
+      # build and attach straight to the draft release.
+      - name: Build and attach to the release
+        if: steps.signing.outputs.enabled != 'true'
+        uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -88,3 +143,60 @@ jobs:
           releaseName: "Marginalia ${{ github.ref_name }}"
           releaseDraft: true
           args: ${{ matrix.tauri-args }}
+
+      # Signed Windows path: build only, sign through SignPath, then attach.
+      - name: Build Windows installers (not attached yet)
+        if: steps.signing.outputs.enabled == 'true'
+        uses: tauri-apps/tauri-action@v0
+        with:
+          args: ${{ matrix.tauri-args }}
+
+      - name: Collect unsigned installers
+        if: steps.signing.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          version=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          mkdir -p unsigned
+          # Match this version only: the Rust cache can restore older bundles.
+          find src-tauri/target -path '*/release/bundle/*' -type f \
+            \( -name "Marginalia_${version}_*-setup.exe" -o -name "Marginalia_${version}_*.msi" \) \
+            -exec cp {} unsigned/ \;
+          ls -l unsigned
+          if [ -z "$(ls -A unsigned)" ]; then
+            echo "No installers found for version $version" >&2
+            exit 1
+          fi
+
+      - name: Upload unsigned installers for SignPath
+        if: steps.signing.outputs.enabled == 'true'
+        id: upload-unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-${{ matrix.rust-targets }}
+          path: unsigned/
+          if-no-files-found: error
+
+      - name: Sign with SignPath
+        if: steps.signing.outputs.enabled == 'true'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'marginalia' }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG || 'release-signing' }}
+          github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          # Each request is approved by hand in SignPath; allow up to an hour.
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: signed
+
+      - name: Attach signed installers to the release
+        if: steps.signing.outputs.enabled == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          ls -l signed
+          # Same file names as the unsigned assets, so download links keep working.
+          gh release upload "$TAG" signed/* --repo "$GITHUB_REPOSITORY" --clobber
