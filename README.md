@@ -6,6 +6,26 @@ A lightweight, cross-platform, **WYSIWYG Markdown-first** text editor. Markdown 
 
 Built with **Tauri v2** (Rust + system webview) and **Milkdown/ProseMirror** — installers are a few MB, memory stays low, cold start is instant.
 
+## Download
+
+Get the installers from the [Marginalia download page](https://mofchris.pages.dev/download) or the [GitHub Releases page](https://github.com/mofchris/marginalia/releases).
+
+- Windows: `Marginalia_<version>_x64-setup.exe`, `Marginalia_<version>_x64_en-US.msi` or `Marginalia_<version>_arm64-setup.exe`
+- macOS: `Marginalia_<version>_universal.dmg` (not signed)
+
+### Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).
+
+- Committers and reviewers: [Christopher Mofunanya (@mofchris)](https://github.com/mofchris)
+- Approvers: [Christopher Mofunanya (@mofchris)](https://github.com/mofchris)
+
+Windows installers are built from this repository on GitHub Actions and every signing request is approved by hand. Read the full [code signing policy](CODE_SIGNING_POLICY.md).
+
+### Privacy policy
+
+This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.
+
 ## Features
 
 - **True inline WYSIWYG** for Markdown (Typora/Notion style): type `# `, `**bold**`, `- `, `> `, `` ` `` and watch them render in place.
@@ -108,7 +128,7 @@ Output lands in `src-tauri/target/release/bundle/`:
 
 ## Releases via CI
 
-Pushing a tag like `v0.1.0` runs [.github/workflows/release.yml](.github/workflows/release.yml), which builds **Windows x64 (msi + nsis)**, **Windows ARM64 (nsis)**, and a **macOS universal dmg**, and attaches them to a draft GitHub Release:
+Pushing a tag like `v0.1.0` runs [.github/workflows/release.yml](.github/workflows/release.yml), which builds **Windows x64 (msi + nsis)**, **Windows ARM64 (nsis)**, and a **macOS universal dmg**, and attaches them to a draft GitHub Release. Once SignPath is set up (see [docs/signpath-application.md](docs/signpath-application.md)), the Windows installers are signed through SignPath before they are attached; until then they stay unsigned:
 
 ```sh
 git tag v0.1.0
@@ -133,3 +153,6 @@ Kept out to stay lightweight — all are natural next steps:
 - Writing `.docx`/`.rtf` back out (imports are one-way by design).
 - Linux packages (deb/rpm/AppImage) — Tauri supports them; add a matrix entry when needed.
 
+## License
+
+Marginalia is released under the [MIT License](LICENSE). Copyright (c) 2026 Christopher Mofunanya.
